@@ -558,6 +558,14 @@ export const appRouter = t.router({
         };
       }
     }),
+
+  getProviderStatus: t.procedure.query(() => {
+    return {
+      gemini: new GeminiAdapter().isEnabled,
+      openrouter: new OpenRouterAdapter().isEnabled,
+      aistudio: new AIStudioAdapter().isEnabled,
+    };
+  }),
 });
 
 // Export the type of the router for the client to use. This is key for end-to-end type safety.
