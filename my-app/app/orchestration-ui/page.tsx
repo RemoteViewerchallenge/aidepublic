@@ -432,17 +432,25 @@ function StepManager({
       name: 'New Step',
       description: 'New step description',
       prompt: 'New prompt',
+      pattern: 'sequential' as OrchestrationPattern,
     };
     setSteps([...steps, newStep]);
   };
 
   const updateStep = (
     id: string,
-    field: 'name' | 'description' | 'prompt',
+    field: 'name' | 'description' | 'prompt' | 'pattern',
     value: string
   ) => {
     const updatedSteps = steps.map(step =>
       step.id === id ? { ...step, [field]: value } : step
+    );
+    setSteps(updatedSteps);
+  };
+
+  const updateStepPatternConfig = (id: string, config: any) => {
+    const updatedSteps = steps.map(step =>
+      step.id === id ? { ...step, patternConfig: config } : step
     );
     setSteps(updatedSteps);
   };
@@ -454,58 +462,165 @@ function StepManager({
 
   return (
     <div>
-      <h3>Steps</h3>
+      <h3>🔧 Steps Configuration</h3>
       {steps.map(step => (
         <div
           key={step.id}
           style={{
-            padding: '10px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            marginBottom: '10px',
+            padding: '15px',
+            border: `2px solid ${getPatternColor(step.pattern)}`,
+            borderRadius: '8px',
+            marginBottom: '15px',
+            background: `${getPatternColor(step.pattern)}08`,
           }}
         >
           <input
             type="text"
             value={step.name}
             onChange={e => updateStep(step.id, 'name', e.target.value)}
-            style={{ display: 'block', width: '100%', marginBottom: '5px' }}
+            style={{ 
+              display: 'block', 
+              width: '100%', 
+              marginBottom: '8px',
+              padding: '8px',
+              borderRadius: '4px',
+              border: '1px solid #ddd'
+            }}
+            placeholder="Step name"
           />
           <textarea
             value={step.description}
             onChange={e => updateStep(step.id, 'description', e.target.value)}
-            style={{ display: 'block', width: '100%', marginBottom: '5px' }}
+            style={{ 
+              display: 'block', 
+              width: '100%', 
+              marginBottom: '8px',
+              padding: '8px',
+              borderRadius: '4px',
+              border: '1px solid #ddd',
+              resize: 'vertical'
+            }}
+            placeholder="Step description"
+            rows={2}
           />
           <textarea
             value={step.prompt}
             onChange={e => updateStep(step.id, 'prompt', e.target.value)}
-            style={{ display: 'block', width: '100%', marginBottom: '5px' }}
-          />
-          <button
-            onClick={() => deleteStep(step.id)}
-            style={{
-              padding: '4px 8px',
-              background: '#dc3545',
-              color: 'white',
-              border: 'none',
+            style={{ 
+              display: 'block', 
+              width: '100%', 
+              marginBottom: '8px',
+              padding: '8px',
               borderRadius: '4px',
+              border: '1px solid #ddd',
+              resize: 'vertical'
+            }}
+            placeholder="Step prompt"
+            rows={3}
+          />
+          <select
+            value={step.pattern || 'sequential'}
+            onChange={e => updateStep(step.id, 'pattern', e.target.value)}
+            style={{
+              display: 'block',
+              width: '100%',
+              marginBottom: '8px',
+              padding: '8px',
+              borderRadius: '4px',
+              border: '1px solid #ddd'
             }}
           >
-            Delete
-          </button>
+            <option value="sequential">🔄 Sequential</option>
+            <option value="parallel">⚡ Parallel</option>
+            <option value="branch">🌲 Branch</option>
+            <option value="retry">🔁 Retry</option>
+            <option value="while">🔄 While Loop</option>
+            <option value="forEach">📋 For Each</option>
+            <option value="switch">🔀 Switch</option>
+          </select>
+          
+          {/* Pattern-specific configuration */}
+          {step.pattern === 'parallel' && (
+            <div style={{ marginBottom: '8px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Parallel Branches (JSON):</label>
+              <textarea
+                value={JSON.stringify(step.patternConfig?.branches || [], null, 2)}
+                onChange={e => {
+                  try {
+                    const branches = JSON.parse(e.target.value);
+                    updateStepPatternConfig(step.id, { branches });
+                  } catch {}
+                }}
+                style={{ width: '100%', fontSize: '11px', fontFamily: 'monospace' }}
+                rows={3}
+                placeholder='["Task 1", "Task 2", "Task 3"]'
+              />
+            </div>
+          )}
+          
+          {step.pattern === 'retry' && (
+            <div style={{ marginBottom: '8px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Max Attempts:</label>
+              <input
+                type="number"
+                value={step.patternConfig?.maxAttempts || 3}
+                onChange={e => updateStepPatternConfig(step.id, { 
+                  ...step.patternConfig, 
+                  maxAttempts: parseInt(e.target.value) 
+                })}
+                style={{ width: '100%', padding: '4px' }}
+                min="1"
+                max="10"
+              />
+            </div>
+          )}
+          
+          {step.pattern === 'while' && (
+            <div style={{ marginBottom: '8px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Max Iterations:</label>
+              <input
+                type="number"
+                value={step.patternConfig?.maxIterations || 5}
+                onChange={e => updateStepPatternConfig(step.id, { 
+                  ...step.patternConfig, 
+                  maxIterations: parseInt(e.target.value) 
+                })}
+                style={{ width: '100%', padding: '4px' }}
+                min="1"
+                max="20"
+              />
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => deleteStep(step.id)}
+              style={{
+                padding: '6px 12px',
+                background: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                fontSize: '12px',
+              }}
+            >
+              🗑️ Delete
+            </button>
+          </div>
         </div>
       ))}
       <button
         onClick={addStep}
         style={{
-          padding: '8px',
+          padding: '10px 15px',
           background: '#007acc',
           color: 'white',
           border: 'none',
           borderRadius: '4px',
+          width: '100%',
         }}
       >
-        Add Step
+        ➕ Add Step
       </button>
     </div>
   );

@@ -20,6 +20,7 @@ import { StateRepository } from '../state/StateRepository';
 // import { agent } from 'volcano-sdk';
 import {
   createOrchestration,
+  createComplexOrchestration,
   OrchestrationConfig,
 } from '../../volcano-sdk/src/orchestration-creator';
 import { agent } from '../../volcano-sdk/src/volcano-sdk';
@@ -482,29 +483,48 @@ export const appRouter = t.router({
         steps: z.array(
           z.object({
             prompt: z.string(),
+            pattern: z.enum(['sequential', 'parallel', 'branch', 'retry', 'while', 'forEach', 'switch']).optional().default('sequential'),
+            patternConfig: z.any().optional(),
           })
         ),
       })
     )
     .mutation(async ({ input }) => {
-      // Use our existing ArbitrageEngineAdapter as the LLM for volcano orchestration
-      const llm = arbitrageEngineAdapter;
+      try {
+        // Use our existing ArbitrageEngineAdapter as the LLM for volcano orchestration
+        const llm = arbitrageEngineAdapter;
 
-      const config: OrchestrationConfig = {
-        roles: input.roles?.map(role => ({
-          ...role,
-          agent: agent({
-            llm,
-            name: role.name,
-            description: role.description,
-          }),
-        })),
-        steps: input.steps,
-      };
+        const config: OrchestrationConfig = {
+          roles: input.roles?.map(role => ({
+            ...role,
+            agent: agent({
+              llm,
+              name: role.name,
+              description: role.description,
+            }),
+          })),
+          steps: input.steps,
+        };
 
-      const orchestration = createOrchestration(config);
-      const results = await orchestration.run();
-      return results;
+        // Create orchestration with pattern support
+        const orchestration = createComplexOrchestration(config, llm);
+        const results = await orchestration.run();
+        
+        return {
+          success: true,
+          results,
+          timestamp: new Date().toISOString(),
+          stepCount: input.steps.length,
+          patterns: input.steps.map(s => s.pattern || 'sequential'),
+        };
+      } catch (error: any) {
+        console.error('Orchestration failed:', error);
+        return {
+          success: false,
+          error: error.message,
+          timestamp: new Date().toISOString(),
+        };
+      }
     }),
 });
 
