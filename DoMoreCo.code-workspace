@@ -13,15 +13,9 @@
       "**/dist": true
     }
   },
-  "extensions": {
-    "recommendations": [
-      "ms-vscode.vscode-typescript-next",
-      "esbenp.prettier-vscode",
-      "dbaeumer.vscode-eslint",
-      "vitest.explorer",
-      "ms-azuretools.vscode-docker"
-    ]
-  },
+  // Workspace extension recommendations removed to avoid auto-install behavior.
+  // If you want to re-enable specific recommendations, add them under
+  // "extensions.recommendations".
   "tasks": {
     "version": "2.0.0",
     "tasks": [
