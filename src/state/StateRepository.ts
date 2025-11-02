@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { StateReadError } from '../errors/customErrors';
-import { ProviderId, HealthStatus } from '../types/provider';
+import { HealthStatus, ProviderId } from '../types/provider';
 
 /**
  * @file This module's only job is to safely read and write data to the filesystem.
@@ -58,7 +58,10 @@ export class StateRepository {
       if (error.code === 'ENOENT') {
         return null;
       }
-      throw new StateReadError(`Failed to read or parse JSON from ${filePath}`, error);
+      throw new StateReadError(
+        `Failed to read or parse JSON from ${filePath}`,
+        error
+      );
     }
   }
 
@@ -66,7 +69,9 @@ export class StateRepository {
     return `provider_states/${providerId}.json`;
   }
 
-  async getProviderState(providerId: ProviderId): Promise<StoredProviderState | null> {
+  async getProviderState(
+    providerId: ProviderId
+  ): Promise<StoredProviderState | null> {
     const filePath = this.getProviderStateFilePath(providerId);
     return this.readJson<StoredProviderState>(filePath);
   }

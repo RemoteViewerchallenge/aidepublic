@@ -16,10 +16,7 @@
  */
 
 import { ProviderAdapter } from '../adapters/BaseProviderAdapter';
-import {
-  StoredProviderState,
-  StateRepository,
-} from '../state/StateRepository';
+import { StateRepository, StoredProviderState } from '../state/StateRepository';
 import { HealthStatus, Model, ProviderId } from '../types/provider';
 import { createModuleLogger } from '../utils/logger';
 

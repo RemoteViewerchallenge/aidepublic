@@ -9,9 +9,14 @@
  *
  * Main Parts:
  * - `interface ProviderAdapter`: The core contract with methods like `checkHealth()`, `fetchAvailableModels()`, and `executeChatCompletion()`.
- */ 
+ */
 
-import { Model, ProviderId, ChatCompletionRequest, ChatCompletionResponse } from '../types/provider';
+import {
+  ChatCompletionRequest,
+  ChatCompletionResponse,
+  Model,
+  ProviderId,
+} from '../types/provider';
 
 /**
  * The interface that all provider adapters must implement.
@@ -36,5 +41,7 @@ export interface ProviderAdapter {
   /**
    * Executes a chat completion request using a standardized format.
    */
-  executeChatCompletion(request: ChatCompletionRequest): Promise<ChatCompletionResponse>;
+  executeChatCompletion(
+    request: ChatCompletionRequest
+  ): Promise<ChatCompletionResponse>;
 }
