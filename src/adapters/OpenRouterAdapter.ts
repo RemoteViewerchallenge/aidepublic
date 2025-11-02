@@ -186,29 +186,79 @@ export class OpenRouterAdapter implements ProviderAdapter {
     }
 
     try {
+      const payload = {
+        model: request.model,
+        messages: request.messages,
+        temperature: request.temperature,
+        max_tokens: request.maxTokens,
+      };
+
+      logger.info(
+        {
+          method: 'executeChatCompletion',
+          provider: this.id,
+          modelId: request.model,
+          messageCount: request.messages.length,
+          promptPreview:
+            request.messages[request.messages.length - 1]?.content?.slice(
+              0,
+              200
+            ) || 'no-prompt',
+          temperature: request.temperature,
+          maxTokens: request.maxTokens,
+        },
+        'Dispatching OpenRouter chat completion request.' as string
+      );
+
       const response = await fetch(`${OPENROUTER_API_BASE}/chat/completions`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: request.model,
-          messages: request.messages,
-          temperature: request.temperature,
-          max_tokens: request.maxTokens,
-        }),
+        body: JSON.stringify(payload),
       });
 
+      const responseText = await response.text();
+
+      logger.info(
+        {
+          method: 'executeChatCompletion',
+          provider: this.id,
+          modelId: request.model,
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          rawResponsePreview: responseText.slice(0, 400),
+        },
+        'Received OpenRouter response.' as string
+      );
+
       if (!response.ok) {
-        const errorBody = await response.text();
         throw new Error(
-          `API request failed with status ${response.status}: ${errorBody}`
+          `API request failed with status ${response.status}: ${responseText}`
         );
       }
 
-      const rawData =
-        (await response.json()) as OpenRouterChatCompletionRawResponse;
+      let rawData: OpenRouterChatCompletionRawResponse;
+      try {
+        rawData = JSON.parse(
+          responseText
+        ) as OpenRouterChatCompletionRawResponse;
+      } catch (parseError) {
+        logger.error(
+          {
+            method: 'executeChatCompletion',
+            provider: this.id,
+            modelId: request.model,
+            reason: 'INVALID_JSON',
+            responseText,
+            parseError,
+          },
+          'Failed to parse OpenRouter response as JSON.' as string
+        );
+        throw parseError;
+      }
 
       // Map the raw snake_case response to our internal camelCase ChatCompletionResponse
       const mappedResponse: ChatCompletionResponse = {

@@ -49,10 +49,11 @@ The ArbitrageEngineAdapter is **maintained for backward compatibility** and spec
 
 ### **When to Use ArbitrageEngineAdapter:**
 
-- Integration with Volcano.dev workflows
-- Real-time API health checking
-- Dynamic provider failover scenarios
-- Custom model selection logic
+- ✅ **Volcano.dev Orchestration** - Integration with volcano-sdk workflows
+- ✅ **Complex Orchestration Patterns** - Sequential, parallel, branch, retry, while, forEach, switch patterns
+- ✅ **Real-time API Health Checking** - Live provider status monitoring
+- ✅ **Dynamic Provider Failover** - Automatic switching between providers
+- ✅ **Legacy Workflow Compatibility** - Existing integrations and custom logic
 
 ### **Legacy Flow: ArbitrageEngineAdapter**
 
@@ -90,10 +91,17 @@ The ArbitrageEngineAdapter is **maintained for backward compatibility** and spec
 
 ### **Current Test Focus:**
 
-- Database sync functionality (`sync-models.ts`)
-- Model data integrity and transformations
-- Direct database query performance
-- Provider adapter integration tests (for real-time usage)
+- ✅ **Database Sync Functionality** (`sync-models.ts`) - Model synchronization
+- ✅ **Model Data Integrity** - Data transformation validation
+- ✅ **Direct Database Queries** - Query performance and correctness
+- ✅ **Orchestration Patterns** - Step-only workflow testing (no roles)
+- ✅ **Provider Adapter Integration** - Real-time usage testing
+- ✅ **Complex Workflow Patterns** - Parallel, branch, retry, forEach, while, switch
+
+### **Legacy Test Maintenance:**
+
+- ⚠️ **ArbitrageEngineAdapter Tests** - Kept for backward compatibility
+- ⚠️ **ProviderManager Integration Tests** - Legacy provider orchestration
 
 ---
 

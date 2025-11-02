@@ -1,14 +1,110 @@
-# Project TODO List
+# 📋 AI Resource Optimizer - TODO
 
-This file tracks outstanding tasks, bugs, and research items.
+## 🚀 **High Priority**
+
+### **Orchestration Stabilization**
+
+- [ ] **Complete Step-Only Pattern Testing** - Test all patterns (parallel, branch, retry, forEach, while, switch) without roles
+- [ ] **Pattern Error Handling** - Implement robust error handling for complex workflow patterns
+- [ ] **Performance Optimization** - Optimize orchestration execution speed and memory usage
+- [ ] **Role Integration** - Once step patterns are stable, integrate role-based execution
+
+### **Documentation & Alignment**
+
+- [x] **Documentation Alignment** - Ensure all docs reflect current architecture and orchestration status
+- [ ] **API Documentation** - Generate comprehensive API docs for tRPC endpoints
+- [ ] **Orchestration Examples** - Create more real-world orchestration pattern examples
 
 ---
 
-## Infrastructure & Tooling
+## 🔧 **Medium Priority**
 
-- [ ] **Investigate VS Code Ports Tab:** The "Ports" tab in VS Code is not automatically detecting or forwarding ports from processes started either manually in the terminal (like `mcp-shell-server`) or from containers managed by `podman-compose`. This may be a configuration issue with VS Code on Fedora, a Podman setting, or a missing extension. This needs to be resolved to improve the debugging experience.
+### **Infrastructure & Tooling**
 
-- [ ] **Implement Shell MCP Integration in API:** The `mcp-shell-server` is running in a container via `podman-compose`, as per `IntegrationPlan.md`. The next step is to make our API use it.
-  - [ ] Verify `SHELL_MCP_URL` in the `.env` file is correctly configured to point to the container service name (e.g., `http://mcp-shell-server:5001/mcp`).
-  - [ ] Update the `runSimpleTask` procedure in `src/server/router.ts` to make a `fetch` call to the shell MCP endpoint, as described in `IntegrationPlan.md` Step 3.
-  - [ ] Ensure the `runSimpleTask` end-to-end test in `src/server/router.e2e.test.ts` is updated to assert the expected output from the shell command (e.g., "Hello from the shell!").
+- [ ] **VS Code Ports Tab Investigation** - Debug port forwarding issues with Podman containers
+- [ ] **Container Health Monitoring** - Implement health checks for all containerized services
+- [ ] **Development Environment** - Streamline setup for new developers
+
+### **MCP Integration**
+
+- [ ] **Shell MCP Integration** - Complete integration with mcp-shell-server container
+  - [ ] Verify `SHELL_MCP_URL` configuration in `.env`
+  - [ ] Update `runSimpleTask` in `src/server/router.ts` for MCP calls
+  - [ ] Update end-to-end tests in `src/server/router.e2e.test.ts`
+- [ ] **MCP Security** - Implement secure command execution policies
+- [ ] **Additional MCPs** - Plan integration with file system and other tool MCPs
+
+---
+
+## 🔬 **Research & Future**
+
+### **Advanced Orchestration**
+
+- [ ] **Conditional Workflows** - Dynamic workflow generation based on data
+- [ ] **Sub-Agent Spawning** - Recursive agent creation within workflows
+- [ ] **Workflow Templates** - Reusable complex orchestration patterns
+- [ ] **Visual Workflow Designer** - Drag-and-drop orchestration UI
+
+### **Performance & Scaling**
+
+- [ ] **Database Query Optimization** - Index and optimize model selection queries
+- [ ] **Caching Strategy** - Implement intelligent caching for frequently used models
+- [ ] **Horizontal Scaling** - Design for multi-instance deployment
+
+### **Provider Expansion**
+
+- [ ] **Additional Free Providers** - Research and integrate more free-tier APIs
+- [ ] **Provider Health Monitoring** - Real-time status dashboard
+- [ ] **Auto-Fallback Policies** - Configurable fallback strategies
+
+---
+
+## ✅ **Recently Completed**
+
+### **Orchestration Foundation**
+
+- [x] **Complex Orchestration UI** - Built pattern-specific configuration interface
+- [x] **Volcano SDK Integration** - Working integration with ArbitrageEngineAdapter
+- [x] **Pattern Implementation** - All major patterns (sequential, parallel, branch, retry, while, forEach, switch)
+- [x] **Step-Only Testing Mode** - Disabled roles for stable pattern testing
+
+### **Architecture Evolution**
+
+- [x] **Database-First Approach** - Migrated from real-time API to database queries
+- [x] **Documentation Alignment** - Updated all docs to reflect current vs legacy approaches
+- [x] **Legacy Compatibility** - Maintained ArbitrageEngineAdapter for existing workflows
+
+---
+
+## 🛑 **Blocked/Waiting**
+
+### **External Dependencies**
+
+- [ ] **Volcano.dev API Stability** - Waiting for stable volcano-sdk release for production use
+- [ ] **Provider API Changes** - Monitor for breaking changes in free-tier APIs
+
+### **Infrastructure**
+
+- [ ] **Container Orchestration** - Decide between Podman Compose vs Kubernetes for production
+
+---
+
+## 📝 **Notes**
+
+### **Current Development Focus**
+
+> Testing orchestration patterns without roles first, then integrating roles when stable
+
+### **Architecture Status**
+
+- **Primary:** Database-first model management
+- **Legacy:** ArbitrageEngineAdapter (maintained for Volcano.dev)
+- **Testing:** Step-only orchestration patterns
+
+### **Next Major Milestone**
+
+> Stable complex orchestration with role integration
+
+---
+
+_Last updated: November 2025_

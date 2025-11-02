@@ -29,6 +29,46 @@ type OrchestrationPattern =
   | 'switch';
 
 const complexOrchestrationTemplates = {
+  'simple-test': {
+    name: '🚀 Simple Test',
+    description: 'Basic sequential steps for testing',
+    steps: [
+      {
+        id: '1',
+        name: 'Hello World',
+        description: 'Basic greeting step',
+        prompt: 'Say hello and introduce yourself as an AI assistant',
+        pattern: 'sequential' as OrchestrationPattern,
+      },
+      {
+        id: '2',
+        name: 'Status Check',
+        description: 'Confirm system is working',
+        prompt: 'Confirm that you are operational and ready to help',
+        pattern: 'sequential' as OrchestrationPattern,
+      },
+    ],
+  },
+  'parallel-test': {
+    name: '⚡ Parallel Test',
+    description: 'Test parallel execution',
+    steps: [
+      {
+        id: '1',
+        name: 'Parallel Tasks',
+        description: 'Execute multiple tasks simultaneously',
+        prompt: 'Perform parallel analysis of the following topics',
+        pattern: 'parallel' as OrchestrationPattern,
+        patternConfig: {
+          branches: [
+            'Analyze the benefits of AI technology',
+            'Research current AI limitations',
+            'Explore future AI possibilities',
+          ],
+        },
+      },
+    ],
+  },
   'research-analysis': {
     name: 'Research & Analysis Pipeline',
     description: 'Parallel research followed by sequential analysis',
@@ -163,16 +203,9 @@ const initialRoles: Role[] = [
 const initialSteps: Step[] = [
   {
     id: '1',
-    name: 'Research Phase',
-    description: 'Initial research and data gathering',
-    prompt: 'Research the topic thoroughly',
-    pattern: 'sequential',
-  },
-  {
-    id: '2',
-    name: 'Analysis Phase',
-    description: 'Analyze gathered information',
-    prompt: 'Analyze the research findings',
+    name: 'Hello Test',
+    description: 'Simple greeting test',
+    prompt: 'Say hello and explain what you can do',
     pattern: 'sequential',
   },
 ];
@@ -180,10 +213,11 @@ const initialSteps: Step[] = [
 export default function OrchestrationUIPage() {
   const [roles] = useState<Role[]>(initialRoles);
   const [steps, setSteps] = useState<Step[]>(initialSteps);
-  const [showRoles, setShowRoles] = useState(true);
+  const [showRoles, setShowRoles] = useState(false); // Start with steps view for testing
   const [results, setResults] = useState<any>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [isRunning, setIsRunning] = useState(false);
+  const [useRoles, setUseRoles] = useState(false); // Toggle for role-based vs step-only execution
 
   const runOrchestration = trpc.runOrchestration.useMutation();
 
@@ -195,6 +229,7 @@ export default function OrchestrationUIPage() {
     if (template) {
       setSteps(template.steps);
       setSelectedTemplate(templateKey);
+      setUseRoles(false); // Templates are step-based by default
     }
   };
 
@@ -202,17 +237,22 @@ export default function OrchestrationUIPage() {
     setIsRunning(true);
     try {
       const orchestrationConfig = {
-        roles: roles.map(({ name, description }) => ({ name, description })),
+        roles: useRoles
+          ? roles.map(({ name, description }) => ({ name, description }))
+          : undefined,
         steps: steps.map(({ prompt, pattern, patternConfig }) => ({
           prompt,
           pattern: pattern || 'sequential',
           patternConfig: patternConfig || {},
         })),
       };
+
+      console.log('🚀 Running orchestration:', orchestrationConfig);
       const response = await runOrchestration.mutateAsync(orchestrationConfig);
       setResults(response);
-    } catch (error) {
-      setResults({ error: error.message });
+    } catch (error: any) {
+      console.error('❌ Orchestration failed:', error);
+      setResults({ error: error.message || 'Unknown error occurred' });
     } finally {
       setIsRunning(false);
     }
@@ -243,7 +283,17 @@ export default function OrchestrationUIPage() {
           background: '#f8f9fa',
         }}
       >
-        <h3>📋 Complex Orchestration Templates</h3>
+        <h3>📋 Complex Orchestration Templates (Step-Only Testing)</h3>
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input
+              type="checkbox"
+              checked={useRoles}
+              onChange={e => setUseRoles(e.target.checked)}
+            />
+            <span>Use Roles (when stable, we&apos;ll combine both)</span>
+          </label>
+        </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {Object.entries(complexOrchestrationTemplates).map(
             ([key, template]) => (

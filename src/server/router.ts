@@ -18,11 +18,9 @@ import { ModelSelector } from '../core/ModelSelector';
 import { ProviderManager } from '../core/ProviderManager';
 import { StateRepository } from '../state/StateRepository';
 // import { agent } from 'volcano-sdk';
-import {
-  createComplexOrchestration,
-  OrchestrationConfig,
-} from '../../volcano-sdk/src/orchestration-creator';
+import { createComplexOrchestration } from '../../volcano-sdk/src/orchestration-creator';
 import { agent } from '../../volcano-sdk/src/volcano-sdk';
+import { AIStudioAdapter } from '../adapters/AIStudioAdapter';
 import { OpenRouterAdapter } from '../adapters/OpenRouterAdapter';
 import { ArbitrageEngineAdapter } from '../core/ArbitrageEngineAdapter';
 import { getEnv } from '../utils/env';
@@ -32,9 +30,10 @@ import { getEnv } from '../utils/env';
 const stateRepository = new StateRepository();
 const geminiAdapter = new GeminiAdapter(); // Will be disabled if no key
 const openRouterAdapter = new OpenRouterAdapter(); // Will be enabled if key exists
+const aiStudioAdapter = new AIStudioAdapter(); // Enabled only when configured
 
 const providerManager = new ProviderManager(
-  [geminiAdapter, openRouterAdapter],
+  [geminiAdapter, openRouterAdapter, aiStudioAdapter],
   stateRepository
 );
 const modelSelector = new ModelSelector();
@@ -98,14 +97,21 @@ export const appRouter = t.router({
       }
 
       // 2. Use the "brain" to select the best model for the task.
-      const chosenModel = await modelSelector.selectModel({
-        minContext: input.criteria?.minContext,
-        maxContext: input.criteria?.maxContext,
-        toolCalling: input.criteria?.toolCalling,
-        vision: input.criteria?.vision,
-        reasoning: input.criteria?.reasoning,
-        embedding: input.criteria?.embedding,
-      });
+      const enabledProviders = providerManager.getEnabledProviderIds();
+      const chosenModel = await modelSelector.selectModel(
+        {
+          minContext: input.criteria?.minContext,
+          maxContext: input.criteria?.maxContext,
+          toolCalling: input.criteria?.toolCalling,
+          vision: input.criteria?.vision,
+          reasoning: input.criteria?.reasoning,
+          embedding: input.criteria?.embedding,
+        },
+        {
+          allowedProviders: enabledProviders,
+          preferredProviderOrder: enabledProviders,
+        }
+      );
 
       if (!chosenModel) {
         throw new TRPCError({
@@ -151,14 +157,23 @@ export const appRouter = t.router({
     )
     .mutation(async ({ input }) => {
       // 1. Select best model for this task based on criteria
-      const chosenModel = await modelSelector.selectModel({
-        minContext: input.modelCriteria?.minContext,
-        maxContext: input.modelCriteria?.maxContext,
-        toolCalling: input.modelCriteria?.toolCalling,
-        vision: input.modelCriteria?.vision,
-        reasoning: input.modelCriteria?.reasoning,
-        embedding: input.modelCriteria?.embedding,
-      });
+      // Always prefer free models by default
+      const enabledProviders = providerManager.getEnabledProviderIds();
+      const chosenModel = await modelSelector.selectModel(
+        {
+          minContext: input.modelCriteria?.minContext,
+          maxContext: input.modelCriteria?.maxContext,
+          toolCalling: input.modelCriteria?.toolCalling,
+          vision: input.modelCriteria?.vision,
+          reasoning: input.modelCriteria?.reasoning,
+          embedding: input.modelCriteria?.embedding,
+          isFree: true, // Always prioritize free models
+        },
+        {
+          allowedProviders: enabledProviders,
+          preferredProviderOrder: enabledProviders,
+        }
+      );
 
       if (!chosenModel) {
         throw new TRPCError({
@@ -504,7 +519,14 @@ export const appRouter = t.router({
         // Use our existing ArbitrageEngineAdapter as the LLM for volcano orchestration
         const llm = arbitrageEngineAdapter;
 
-        const config: OrchestrationConfig = {
+        // Ensure steps are of type ComplexStep[]
+        const complexSteps = input.steps.map(step => ({
+          prompt: step.prompt,
+          pattern: step.pattern,
+          patternConfig: step.patternConfig,
+        }));
+
+        const config = {
           roles: input.roles?.map(role => ({
             ...role,
             agent: agent({
@@ -513,7 +535,7 @@ export const appRouter = t.router({
               description: role.description,
             }),
           })),
-          steps: input.steps,
+          steps: complexSteps,
         };
 
         // Create orchestration with pattern support

@@ -110,13 +110,20 @@ export class ArbitrageEngineAdapter implements Llm {
       'Executing request via Arbitrage Engine.'
     );
 
-    // 1. Get all healthy, available models from our engine.
-    const availableModels = await this.providerManager.getAvailableModels();
+    // 1. (Removed unused availableModels variable)
 
     // 2. Use our "brain" (ModelSelector) to select the best model for the given prompt.
-    const bestModel = await this.modelSelector.selectModel({
-      // We could add more sophisticated criteria here based on the prompt
-    });
+    const enabledProviders = this.providerManager.getEnabledProviderIds();
+    const bestModel = await this.modelSelector.selectModel(
+      {
+        isFree: true,
+        // We could add more sophisticated criteria here based on the prompt
+      },
+      {
+        allowedProviders: enabledProviders,
+        preferredProviderOrder: enabledProviders,
+      }
+    );
 
     if (!bestModel) {
       logger.error(

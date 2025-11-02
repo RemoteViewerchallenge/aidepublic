@@ -20,7 +20,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' data: blob: https://cdn.jsdelivr.net",
               "font-src 'self' data: blob: https: https://cdn.jsdelivr.net",
               "img-src 'self' data: blob: https:",
-              "connect-src 'self' http://localhost:3000 http://localhost:3001 ws://localhost:3001 ws://localhost:3000 https://cdn.jsdelivr.net",
+              "connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* https://cdn.jsdelivr.net https://*.google.com https://*.googleapis.com",
               "worker-src 'self' blob: https://cdn.jsdelivr.net",
               "child-src 'self' blob:",
               "frame-src 'self' blob:",

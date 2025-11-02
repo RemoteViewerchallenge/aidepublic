@@ -2,11 +2,11 @@
   "name": "ai-resource-optimizer",
   "version": "0.1.0",
   "description": "Intelligent gateway for routing requests to free-tier LLM providers.",
-  "main": "dist/server/index.js",
+  "main": "dist/src/server/index.js",
   "type": "module",
   "scripts": {
     "build:notest": "tsc",
-    "start": "node dist/server/index.js",
+    "start": "node dist/src/server/index.js",
     "dev": "tsx watch src/server/index.ts",
     "dev:client": "vite",
     "dev:server": "tsx watch src/server/language-server.ts",
@@ -16,6 +16,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@google/generative-ai": "0.12.0",
+    "@modelcontextprotocol/sdk": "^1.20.2",
     "@trpc/client": "11.7.0",
     "@trpc/react-query": "11.7.0",
     "@trpc/server": "11.7.0",

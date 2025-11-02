@@ -13,6 +13,11 @@ export default function Provider({ children }: { children: React.ReactNode }) {
       links: [
         httpBatchLink({
           url: '/api/trpc',
+          // Add some debugging
+          fetch(url, options) {
+            console.log('tRPC fetch:', url, options);
+            return fetch(url, options);
+          },
         }),
       ],
     })

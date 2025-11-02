@@ -170,6 +170,10 @@ export class ProviderManager {
     return this.adapters.find(a => a.id === providerId);
   }
 
+  public getEnabledProviderIds(): ProviderId[] {
+    return this.adapters.map(adapter => adapter.id);
+  }
+
   /**
    * Clears any running background tasks, like health check timers.
    */

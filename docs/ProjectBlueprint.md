@@ -18,7 +18,9 @@ _Implementation Note:_ For our initial build with a single provider, this simpli
 
 - **Agentic Delegation & "Heavy Equipment" Roles:** Our system will treat "Roles" (e.g., `role:code-generator`) as persistent, capability-defining assets, like pieces of heavy machinery. An orchestrator agent will assign a qualified "driver" (an LLM with the right capabilities, like tool-use) to operate the "heavy equipment" (the Role) for a specific task. This allows any capable LLM to perform a standardized role, ensuring consistency and maximizing resource utilization.
 
-- **Structured Model Selection:** The `ModelSelector` will evolve beyond simple keyword matching. It will be designed to accept structured requirements (e.g., `{ "contextWindow": { "gt": 70000 }, "capabilities": ["tool_calling", "reasoning"] }`) to allow for precise, programmatic selection of models based on specific parameters. This will be essential for advanced agents that need to dynamically choose the right tool for a sub-task.
+- **Complex Orchestration Patterns:** The system supports sophisticated workflow patterns including parallel execution, conditional branching, retry logic, iterative loops, and dynamic switching. These patterns can be tested independently (step-only mode) before integrating with role-based execution for maximum stability.
+
+- **Structured Model Selection:** The `ModelSelector` will evolve beyond simple keyword matching. It will be designed to accept structured requirements (e.g., `{ "contextWindow": { "gt": 70000 }, "capabilities": ["tool_calling", "reasoning"] }`) to allow for precise, programmatic selection of models based on specific parameters. This is essential for advanced agents that need to dynamically choose the right tool for a sub-task.
 
 ### Major Architectural Choices
 
@@ -49,34 +51,36 @@ _Implementation Note:_ For our initial build with a single provider, this simpli
 
 This index maps the system's concepts to their location in the filesystem.
 
-| Concept / Responsibility                       | Location in Code                         |
-| ---------------------------------------------- | ---------------------------------------- |
-| **The Project's "Constitution"**               | `docs/code_rules.md`                     |
-| **Architecture Update Documentation**          | `docs/Architecture-Update.md`            |
-| **The Engine's Blueprint**                     | `docs/ProviderManager.md`                |
-| **Model Synchronization (Primary)**            | `src/scripts/sync-models.ts`             |
-| **Database Schema**                            | `src/db/schema.sql`                      |
-| **The Main Orchestration Engine (Legacy)**     | `src/core/ProviderManager.ts`            |
-| **The "Brain" for Model Selection (Legacy)**   | `src/core/ModelSelector.ts`              |
-| **Volcano.dev Integration (Legacy)**           | `src/core/ArbitrageEngineAdapter.ts`     |
-| **The Public-Facing API Definition**           | `src/server/router.ts`                   |
-| **The Application's Startup File**             | `src/server/index.ts`                    |
-| **The "Tool Factory" for creating MCPs**       | `src/core/ToolForge.ts`                  |
-| **The "Operations Manager" for Tasks**         | `src/core/TaskManager.ts`                |
-| **The Agent's "Workspace" for files/data**     | `src/workspace/WorkspaceManager.ts`      |
-| **The "Contract" for All Providers**           | `src/adapters/BaseProviderAdapter.ts`    |
-| **Specific Provider Logic (e.g., Google)**     | `src/adapters/GeminiAdapter.ts`          |
-| **Specific Provider Logic (e.g., OpenRouter)** | `src/adapters/OpenRouterAdapter.ts`      |
-| **Safe File Reading/Writing**                  | `src/state/StateRepository.ts`           |
-| **Resilience (Circuit Breaker)**               | `src/utils/resilience.ts`                |
-| **Resilience (Retries)**                       | `src/utils/async.ts`                     |
-| **Centralized Logging Configuration**          | `src/utils/logger.ts`                    |
-| **Custom Error Definitions**                   | `src/errors/customErrors.ts`             |
-| **Shared Data Structures (Tasks, etc.)**       | `src/types/task.ts`                      |
-| **Shared Data Structures (Models, etc.)**      | `src/types/provider.ts`                  |
-| **Environment Variable Access**                | `src/utils/env.ts`                       |
-| **Static Provider Configuration**              | `config/providers.json`                  |
-| **Dynamic Provider Runtime State**             | `data/provider-state/[provider-id].json` |
+| Concept / Responsibility                       | Location in Code                           |
+| ---------------------------------------------- | ------------------------------------------ |
+| **The Project's "Constitution"**               | `docs/code_rules.md`                       |
+| **Architecture Update Documentation**          | `docs/Architecture-Update.md`              |
+| **The Engine's Blueprint**                     | `docs/ProviderManager.md`                  |
+| **Model Synchronization (Primary)**            | `src/scripts/sync-models.ts`               |
+| **Database Schema**                            | `src/db/schema.sql`                        |
+| **The Main Orchestration Engine (Legacy)**     | `src/core/ProviderManager.ts`              |
+| **The "Brain" for Model Selection (Legacy)**   | `src/core/ModelSelector.ts`                |
+| **Volcano.dev Integration (Legacy)**           | `src/core/ArbitrageEngineAdapter.ts`       |
+| **The Public-Facing API Definition**           | `src/server/router.ts`                     |
+| **The Application's Startup File**             | `src/server/index.ts`                      |
+| **The "Tool Factory" for creating MCPs**       | `src/core/ToolForge.ts`                    |
+| **The "Operations Manager" for Tasks**         | `src/core/TaskManager.ts`                  |
+| **Agent Orchestration Creator**                | `volcano-sdk/src/orchestration-creator.ts` |
+| **Complex Orchestration UI**                   | `my-app/app/orchestration-ui/page.tsx`     |
+| **The Agent's "Workspace" for files/data**     | `src/workspace/WorkspaceManager.ts`        |
+| **The "Contract" for All Providers**           | `src/adapters/BaseProviderAdapter.ts`      |
+| **Specific Provider Logic (e.g., Google)**     | `src/adapters/GeminiAdapter.ts`            |
+| **Specific Provider Logic (e.g., OpenRouter)** | `src/adapters/OpenRouterAdapter.ts`        |
+| **Safe File Reading/Writing**                  | `src/state/StateRepository.ts`             |
+| **Resilience (Circuit Breaker)**               | `src/utils/resilience.ts`                  |
+| **Resilience (Retries)**                       | `src/utils/async.ts`                       |
+| **Centralized Logging Configuration**          | `src/utils/logger.ts`                      |
+| **Custom Error Definitions**                   | `src/errors/customErrors.ts`               |
+| **Shared Data Structures (Tasks, etc.)**       | `src/types/task.ts`                        |
+| **Shared Data Structures (Models, etc.)**      | `src/types/provider.ts`                    |
+| **Environment Variable Access**                | `src/utils/env.ts`                         |
+| **Static Provider Configuration**              | `config/providers.json`                    |
+| **Dynamic Provider Runtime State**             | `data/provider-state/[provider-id].json`   |
 
 ---
 

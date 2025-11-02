@@ -41,7 +41,7 @@ describe('AIStudioAdapter (Integration)', () => {
       model: 'gemini-pro',
       messages: [{ role: 'user', content: 'Hello!' }],
     });
-    expect(response.choices.message.content).toBeTruthy();
+    expect(response.choices[0].message.content).toBeTruthy();
     expect(response.usage.totalTokens).toBeGreaterThan(0);
   });
 
@@ -49,3 +49,4 @@ describe('AIStudioAdapter (Integration)', () => {
     // This test is skipped as tool use is not yet implemented for AI Studio.
     await expect(adapter.canHandleToolUse()).resolves.toBe(false);
   });
+});
