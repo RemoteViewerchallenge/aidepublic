@@ -29,6 +29,12 @@ interface GenerationResult {
   providerId?: string;
 }
 
+interface ProviderStatus {
+  gemini: boolean;
+  openrouter: boolean;
+  aistudio: boolean;
+}
+
 // Test API function - using working non-batch format
 const testAPI = async (): Promise<any> => {
   try {
@@ -107,6 +113,9 @@ export default function EnhancedWorkspace() {
   });
 
   const [apiStatus, setApiStatus] = useState<string>('Testing...');
+  const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(
+    null
+  );
   const [savedRoles, setSavedRoles] = useState<Role[]>([]);
 
   // 4-column workspace state
@@ -157,6 +166,21 @@ export default function EnhancedWorkspace() {
       }
     };
     testConnection();
+  }, []);
+
+  // Fetch provider status on mount
+  useEffect(() => {
+    const getStatus = async () => {
+      try {
+        const response = await fetch('/api/trpc/getProviderStatus');
+        const data = await response.json();
+        const status = data[0].result?.data || data.result || data;
+        setProviderStatus(status);
+      } catch (error) {
+        console.error('Failed to get provider status:', error);
+      }
+    };
+    getStatus();
   }, []);
 
   // Update model stats when parameters change
@@ -407,6 +431,28 @@ export default function EnhancedWorkspace() {
           <strong>API:</strong>{' '}
           <span style={{ fontFamily: 'monospace' }}>{apiStatus}</span>
         </div>
+
+        {providerStatus && (
+          <div
+            style={{
+              background: '#252525',
+              padding: '8px',
+              borderRadius: '4px',
+              marginBottom: '15px',
+              border: '1px solid #333',
+              fontSize: '12px',
+            }}
+          >
+            <strong>Provider Status:</strong>
+            <ul style={{ margin: 0, paddingLeft: '20px' }}>
+              {Object.entries(providerStatus).map(([provider, enabled]) => (
+                <li key={provider}>
+                  {provider}: {enabled ? '✅ Enabled' : '❌ Disabled'}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div
           style={{
