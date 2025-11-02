@@ -1,0 +1,26 @@
+{
+  "mcpProxy": {
+    "addr": ":8080"
+  },
+  "mcpServers": {
+    "tavily-search": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/home/guy/.mcp/not installed/mcp-server-tavily-main",
+        "run",
+        "tavily-search"
+      ],
+      "env": {
+        "TAVILY_API_KEY": "YOUR_TAVILY_API_KEY",
+        "PYTHONIOENCODING": "utf-8"
+      }
+    },
+    "web-search": {
+      "command": "node",
+      "args": [
+        "/home/guy/.mcp/not installed/web-search-main/build/index.js"
+      ]
+    }
+  }
+}
