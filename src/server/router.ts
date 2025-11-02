@@ -271,23 +271,27 @@ export const appRouter = t.router({
       aiStudioResult.rows.forEach((model: any) => {
         const modelName = (model.name || model.id || '').toLowerCase();
         const modelId = (model.id || '').toLowerCase();
-        
+
         // Most Gemini models have vision capability
-        const hasVision = modelName.includes('vision') || 
-                         modelName.includes('image') || 
-                         modelId.includes('vision') ||
-                         modelId.includes('gemini'); // Most Gemini models support vision
-        
-        const hasThinking = model.thinking || 
-                           modelName.includes('think') || 
-                           modelName.includes('reason') ||
-                           modelName.includes('experiment');
-        
-        const hasEmbedding = model.supportedGenerationMethods?.includes('embedContent') ||
-                            modelName.includes('embed');
-        
-        const hasTools = model.supportedGenerationMethods?.includes('generateContent') ||
-                        model.supportedGenerationMethods?.includes('toolUse');
+        const hasVision =
+          modelName.includes('vision') ||
+          modelName.includes('image') ||
+          modelId.includes('vision') ||
+          modelId.includes('gemini'); // Most Gemini models support vision
+
+        const hasThinking =
+          model.thinking ||
+          modelName.includes('think') ||
+          modelName.includes('reason') ||
+          modelName.includes('experiment');
+
+        const hasEmbedding =
+          model.supportedGenerationMethods?.includes('embedContent') ||
+          modelName.includes('embed');
+
+        const hasTools =
+          model.supportedGenerationMethods?.includes('generateContent') ||
+          model.supportedGenerationMethods?.includes('toolUse');
 
         models.push({
           id: model.id,
@@ -306,7 +310,7 @@ export const appRouter = t.router({
           parameters: null,
           rawData: model,
           isFree: true,
-          source: 'ai_studio_models'
+          source: 'ai_studio_models',
         });
       });
 
@@ -314,34 +318,38 @@ export const appRouter = t.router({
       openRouterResult.rows.forEach((model: any) => {
         const modelName = (model.name || '').toLowerCase();
         const modelId = (model.id || '').toLowerCase();
-        
+
         // Check if completely free
         const pricing = model.pricing || {};
-        const isFree = pricing.image === '0' &&
-                      pricing.prompt === '0' &&
-                      pricing.request === '0' &&
-                      pricing.completion === '0' &&
-                      pricing.web_search === '0' &&
-                      pricing.internal_reasoning === '0';
-        
+        const isFree =
+          pricing.image === '0' &&
+          pricing.prompt === '0' &&
+          pricing.request === '0' &&
+          pricing.completion === '0' &&
+          pricing.web_search === '0' &&
+          pricing.internal_reasoning === '0';
+
         // Only include free models from OpenRouter
         if (!isFree) return;
-        
-        const hasVision = modelName.includes('vision') || 
-                         modelName.includes('image') ||
-                         modelId.includes('vision') ||
-                         model.architecture?.input_modalities?.includes('image');
-        
-        const hasThinking = modelName.includes('think') || 
-                           modelName.includes('reason') ||
-                           modelName.includes('o1') ||
-                           modelName.includes('experiment');
-        
-        const hasEmbedding = modelName.includes('embed') ||
-                            modelId.includes('embed');
-        
-        const hasTools = model.supported_parameters?.includes('tools') ||
-                        model.supported_parameters?.includes('functions');
+
+        const hasVision =
+          modelName.includes('vision') ||
+          modelName.includes('image') ||
+          modelId.includes('vision') ||
+          model.architecture?.input_modalities?.includes('image');
+
+        const hasThinking =
+          modelName.includes('think') ||
+          modelName.includes('reason') ||
+          modelName.includes('o1') ||
+          modelName.includes('experiment');
+
+        const hasEmbedding =
+          modelName.includes('embed') || modelId.includes('embed');
+
+        const hasTools =
+          model.supported_parameters?.includes('tools') ||
+          model.supported_parameters?.includes('functions');
 
         models.push({
           id: model.id,
@@ -360,7 +368,7 @@ export const appRouter = t.router({
           parameters: null,
           rawData: model,
           isFree: true,
-          source: 'openrouter_models'
+          source: 'openrouter_models',
         });
       });
 
@@ -372,10 +380,16 @@ export const appRouter = t.router({
         return (b.contextLength || 0) - (a.contextLength || 0);
       });
 
-      const aiStudioCount = models.filter(m => m.provider === 'aistudio').length;
-      const openRouterCount = models.filter(m => m.provider === 'openrouter').length;
-      
-      console.log(`📊 Found ${models.length} total models: ${aiStudioCount} AI Studio + ${openRouterCount} FREE OpenRouter`);
+      const aiStudioCount = models.filter(
+        m => m.provider === 'aistudio'
+      ).length;
+      const openRouterCount = models.filter(
+        m => m.provider === 'openrouter'
+      ).length;
+
+      console.log(
+        `📊 Found ${models.length} total models: ${aiStudioCount} AI Studio + ${openRouterCount} FREE OpenRouter`
+      );
 
       return models;
     } catch (error: any) {
