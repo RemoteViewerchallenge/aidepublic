@@ -235,51 +235,149 @@ export const appRouter = t.router({
       // Import the pool here to avoid circular dependencies
       const { default: pool } = await import('../db/index.js');
 
-      const result = await pool.query(`
+      // Query AI Studio models from ai_studio_models table
+      const aiStudioResult = await pool.query(`
         SELECT 
           id,
-          provider,
+          "displayName" as name,
+          description,
+          "inputTokenLimit" as context_length,
+          "supportedGenerationMethods",
+          temperature,
+          "topP",
+          "topK",
+          thinking
+        FROM ai_studio_models
+        ORDER BY "inputTokenLimit" DESC NULLS LAST
+      `);
+
+      // Query OpenRouter models from openrouter_models table - ALL models
+      const openRouterResult = await pool.query(`
+        SELECT 
+          id,
           name,
           description,
           context_length,
-          parameters,
-          tool_calling,
-          vision,
-          reasoning,
-          embedding,
-          raw_data
-        FROM models 
-        WHERE provider = 'aistudio'
-           OR (provider = 'openrouter'
-               AND raw_data->'pricing'->>'image' = '0'
-               AND raw_data->'pricing'->>'prompt' = '0'
-               AND raw_data->'pricing'->>'request' = '0'
-               AND raw_data->'pricing'->>'completion' = '0'
-               AND raw_data->'pricing'->>'web_search' = '0'
-               AND raw_data->'pricing'->>'internal_reasoning' = '0')
-        ORDER BY provider, context_length DESC
+          architecture,
+          pricing,
+          supported_parameters
+        FROM openrouter_models
+        ORDER BY context_length DESC NULLS LAST
       `);
 
-      console.log(
-        `📊 Found ${result.rows.length} models (AI Studio + FREE OpenRouter)`
-      );
+      const models: any[] = [];
 
-      return result.rows.map((model: any) => ({
-        id: model.id,
-        name: model.name || model.id,
-        provider: model.provider,
-        contextLength: model.context_length,
-        parameters: model.parameters,
-        capabilities: {
-          toolCalling: model.tool_calling,
-          vision: model.vision,
-          reasoning: model.reasoning,
-          embedding: model.embedding,
-        },
-        description: model.description,
-        rawData: model.raw_data,
-        isFree: model.provider === 'aistudio' || true, // AI Studio models are available, OpenRouter ones are guaranteed free
-      }));
+      // Process AI Studio models with keyword detection
+      aiStudioResult.rows.forEach((model: any) => {
+        const modelName = (model.name || model.id || '').toLowerCase();
+        const modelId = (model.id || '').toLowerCase();
+        
+        // Most Gemini models have vision capability
+        const hasVision = modelName.includes('vision') || 
+                         modelName.includes('image') || 
+                         modelId.includes('vision') ||
+                         modelId.includes('gemini'); // Most Gemini models support vision
+        
+        const hasThinking = model.thinking || 
+                           modelName.includes('think') || 
+                           modelName.includes('reason') ||
+                           modelName.includes('experiment');
+        
+        const hasEmbedding = model.supportedGenerationMethods?.includes('embedContent') ||
+                            modelName.includes('embed');
+        
+        const hasTools = model.supportedGenerationMethods?.includes('generateContent') ||
+                        model.supportedGenerationMethods?.includes('toolUse');
+
+        models.push({
+          id: model.id,
+          name: model.name || model.id?.replace('models/', ''),
+          provider: 'aistudio',
+          contextLength: model.context_length || 0,
+          capabilities: {
+            toolCalling: hasTools,
+            vision: hasVision,
+            reasoning: hasThinking,
+            embedding: hasEmbedding,
+            uncensored: modelName.includes('uncensored'),
+            experimental: modelName.includes('experiment'),
+          },
+          description: model.description || '',
+          parameters: null,
+          rawData: model,
+          isFree: true,
+          source: 'ai_studio_models'
+        });
+      });
+
+      // Process OpenRouter models with keyword detection and free filtering
+      openRouterResult.rows.forEach((model: any) => {
+        const modelName = (model.name || '').toLowerCase();
+        const modelId = (model.id || '').toLowerCase();
+        
+        // Check if completely free
+        const pricing = model.pricing || {};
+        const isFree = pricing.image === '0' &&
+                      pricing.prompt === '0' &&
+                      pricing.request === '0' &&
+                      pricing.completion === '0' &&
+                      pricing.web_search === '0' &&
+                      pricing.internal_reasoning === '0';
+        
+        // Only include free models from OpenRouter
+        if (!isFree) return;
+        
+        const hasVision = modelName.includes('vision') || 
+                         modelName.includes('image') ||
+                         modelId.includes('vision') ||
+                         model.architecture?.input_modalities?.includes('image');
+        
+        const hasThinking = modelName.includes('think') || 
+                           modelName.includes('reason') ||
+                           modelName.includes('o1') ||
+                           modelName.includes('experiment');
+        
+        const hasEmbedding = modelName.includes('embed') ||
+                            modelId.includes('embed');
+        
+        const hasTools = model.supported_parameters?.includes('tools') ||
+                        model.supported_parameters?.includes('functions');
+
+        models.push({
+          id: model.id,
+          name: model.name,
+          provider: 'openrouter',
+          contextLength: model.context_length || 0,
+          capabilities: {
+            toolCalling: hasTools,
+            vision: hasVision,
+            reasoning: hasThinking,
+            embedding: hasEmbedding,
+            uncensored: modelName.includes('uncensored'),
+            experimental: modelName.includes('experiment'),
+          },
+          description: model.description || '',
+          parameters: null,
+          rawData: model,
+          isFree: true,
+          source: 'openrouter_models'
+        });
+      });
+
+      // Sort by provider then context length
+      models.sort((a, b) => {
+        if (a.provider !== b.provider) {
+          return a.provider.localeCompare(b.provider);
+        }
+        return (b.contextLength || 0) - (a.contextLength || 0);
+      });
+
+      const aiStudioCount = models.filter(m => m.provider === 'aistudio').length;
+      const openRouterCount = models.filter(m => m.provider === 'openrouter').length;
+      
+      console.log(`📊 Found ${models.length} total models: ${aiStudioCount} AI Studio + ${openRouterCount} FREE OpenRouter`);
+
+      return models;
     } catch (error: any) {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
