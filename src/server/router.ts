@@ -22,7 +22,7 @@ import {
   createOrchestration,
   OrchestrationConfig,
 } from '../../volcano-sdk/src/orchestration-creator';
-import { agent, llmOpenAI } from '../../volcano-sdk/src/volcano-sdk';
+import { agent } from '../../volcano-sdk/src/volcano-sdk';
 import { OpenRouterAdapter } from '../adapters/OpenRouterAdapter';
 import { getEnv } from '../utils/env';
 
@@ -484,10 +484,47 @@ export const appRouter = t.router({
       })
     )
     .mutation(async ({ input }) => {
-      const llm = llmOpenAI({
-        apiKey: process.env.OPENAI_API_KEY!,
-        model: 'gpt-4o-mini',
-      });
+      // Create a volcano-compatible LLM using our OpenRouterAdapter
+      const llm = {
+        id: 'openrouter-free',
+        model: 'meta-llama/llama-3.2-3b-instruct:free',
+        client: openRouterAdapter,
+        
+        async gen(prompt: string): Promise<string> {
+          try {
+            const response = await openRouterAdapter.executeChatCompletion({
+              model: 'meta-llama/llama-3.2-3b-instruct:free', // Free model
+              messages: [{ role: 'user', content: prompt }],
+              temperature: 0.7,
+              maxTokens: 2000,
+            });
+            return response.choices[0]?.message?.content || '';
+          } catch (error) {
+            console.error('LLM generation failed:', error);
+            return 'Error: Failed to generate response';
+          }
+        },
+        
+        async genWithTools(prompt: string, tools: any[]): Promise<any> {
+          // For now, just do basic generation without tools
+          // You could extend this to support tool calling if needed
+          const content = await this.gen(prompt);
+          return {
+            content,
+            toolCalls: [],
+            usage: null,
+          };
+        },
+        
+        async *genStream(prompt: string): AsyncGenerator<string, void, unknown> {
+          // For now, just yield the full response
+          // You could implement streaming if OpenRouterAdapter supports it
+          const response = await this.gen(prompt);
+          yield response;
+        },
+        
+        getUsage: () => null, // Optional usage tracking
+      };
 
       const config: OrchestrationConfig = {
         roles: input.roles?.map(role => ({
