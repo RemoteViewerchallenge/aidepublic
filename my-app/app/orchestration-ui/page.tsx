@@ -188,6 +188,22 @@ function RoleManager({
     setRoles([...roles, newRole]);
   };
 
+  const updateRole = (
+    id: string,
+    field: 'name' | 'description',
+    value: string
+  ) => {
+    const updatedRoles = roles.map(role =>
+      role.id === id ? { ...role, [field]: value } : role
+    );
+    setRoles(updatedRoles);
+  };
+
+  const deleteRole = (id: string) => {
+    const updatedRoles = roles.filter(role => role.id !== id);
+    setRoles(updatedRoles);
+  };
+
   return (
     <div>
       <h3>Roles</h3>
@@ -201,8 +217,29 @@ function RoleManager({
             marginBottom: '10px',
           }}
         >
-          <strong>{role.name}</strong>
-          <p>{role.description}</p>
+          <input
+            type="text"
+            value={role.name}
+            onChange={e => updateRole(role.id, 'name', e.target.value)}
+            style={{ display: 'block', width: '100%', marginBottom: '5px' }}
+          />
+          <textarea
+            value={role.description}
+            onChange={e => updateRole(role.id, 'description', e.target.value)}
+            style={{ display: 'block', width: '100%', marginBottom: '5px' }}
+          />
+          <button
+            onClick={() => deleteRole(role.id)}
+            style={{
+              padding: '4px 8px',
+              background: '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+            }}
+          >
+            Delete
+          </button>
         </div>
       ))}
       <button
