@@ -22,6 +22,7 @@ import {
   createOrchestration,
   OrchestrationConfig,
 } from '../../volcano-sdk/src/orchestration-creator';
+import { ArbitrageEngineAdapter } from '../core/ArbitrageEngineAdapter';
 import { agent } from '../../volcano-sdk/src/volcano-sdk';
 import { OpenRouterAdapter } from '../adapters/OpenRouterAdapter';
 import { getEnv } from '../utils/env';
@@ -37,8 +38,7 @@ const providerManager = new ProviderManager(
   stateRepository
 );
 const modelSelector = new ModelSelector();
-// import { ArbitrageEngineAdapter } from '../core/ArbitrageEngineAdapter.js';
-// const arbitrageEngineAdapter = new ArbitrageEngineAdapter(providerManager, modelSelector);
+const arbitrageEngineAdapter = new ArbitrageEngineAdapter(providerManager, modelSelector);
 
 // Initialize the ProviderManager to start health checks and load state.
 // DISABLED: We use database-based model management instead of real-time API calls
@@ -489,7 +489,7 @@ export const appRouter = t.router({
         id: 'openrouter-free',
         model: 'meta-llama/llama-3.2-3b-instruct:free',
         client: openRouterAdapter,
-        
+
         async gen(prompt: string): Promise<string> {
           try {
             const response = await openRouterAdapter.executeChatCompletion({
@@ -504,7 +504,7 @@ export const appRouter = t.router({
             return 'Error: Failed to generate response';
           }
         },
-        
+
         async genWithTools(prompt: string, tools: any[]): Promise<any> {
           // For now, just do basic generation without tools
           // You could extend this to support tool calling if needed
@@ -515,14 +515,16 @@ export const appRouter = t.router({
             usage: null,
           };
         },
-        
-        async *genStream(prompt: string): AsyncGenerator<string, void, unknown> {
+
+        async *genStream(
+          prompt: string
+        ): AsyncGenerator<string, void, unknown> {
           // For now, just yield the full response
           // You could implement streaming if OpenRouterAdapter supports it
           const response = await this.gen(prompt);
           yield response;
         },
-        
+
         getUsage: () => null, // Optional usage tracking
       };
 
