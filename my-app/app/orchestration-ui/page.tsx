@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { trpc } from '../../utils/trpc';
+import RoleManager from '../role-manager/page';
 
 type Role = {
   id: string;
@@ -37,7 +38,7 @@ const initialSteps: Step[] = [
 ];
 
 export default function OrchestrationUIPage() {
-  const [roles, setRoles] = useState<Role[]>(initialRoles);
+  const [roles] = useState<Role[]>(initialRoles);
   const [steps, setSteps] = useState<Step[]>(initialSteps);
   const [showRoles, setShowRoles] = useState(true);
   const [results, setResults] = useState<any>(null);
@@ -99,7 +100,7 @@ export default function OrchestrationUIPage() {
           </button>
         </div>
         {showRoles ? (
-          <RoleManager roles={roles} setRoles={setRoles} />
+          <RoleManager />
         ) : (
           <StepManager steps={steps} setSteps={setSteps} />
         )}
@@ -172,92 +173,6 @@ export default function OrchestrationUIPage() {
   );
 }
 
-function RoleManager({
-  roles,
-  setRoles,
-}: {
-  roles: Role[];
-  setRoles: (roles: Role[]) => void;
-}) {
-  const addRole = () => {
-    const newRole = {
-      id: Date.now().toString(),
-      name: 'New Role',
-      description: 'New role description',
-    };
-    setRoles([...roles, newRole]);
-  };
-
-  const updateRole = (
-    id: string,
-    field: 'name' | 'description',
-    value: string
-  ) => {
-    const updatedRoles = roles.map(role =>
-      role.id === id ? { ...role, [field]: value } : role
-    );
-    setRoles(updatedRoles);
-  };
-
-  const deleteRole = (id: string) => {
-    const updatedRoles = roles.filter(role => role.id !== id);
-    setRoles(updatedRoles);
-  };
-
-  return (
-    <div>
-      <h3>Roles</h3>
-      {roles.map(role => (
-        <div
-          key={role.id}
-          style={{
-            padding: '10px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            marginBottom: '10px',
-          }}
-        >
-          <input
-            type="text"
-            value={role.name}
-            onChange={e => updateRole(role.id, 'name', e.target.value)}
-            style={{ display: 'block', width: '100%', marginBottom: '5px' }}
-          />
-          <textarea
-            value={role.description}
-            onChange={e => updateRole(role.id, 'description', e.target.value)}
-            style={{ display: 'block', width: '100%', marginBottom: '5px' }}
-          />
-          <button
-            onClick={() => deleteRole(role.id)}
-            style={{
-              padding: '4px 8px',
-              background: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-            }}
-          >
-            Delete
-          </button>
-        </div>
-      ))}
-      <button
-        onClick={addRole}
-        style={{
-          padding: '8px',
-          background: '#007acc',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-        }}
-      >
-        Add Role
-      </button>
-    </div>
-  );
-}
-
 function StepManager({
   steps,
   setSteps,
@@ -275,6 +190,22 @@ function StepManager({
     setSteps([...steps, newStep]);
   };
 
+  const updateStep = (
+    id: string,
+    field: 'name' | 'description' | 'prompt',
+    value: string
+  ) => {
+    const updatedSteps = steps.map(step =>
+      step.id === id ? { ...step, [field]: value } : step
+    );
+    setSteps(updatedSteps);
+  };
+
+  const deleteStep = (id: string) => {
+    const updatedSteps = steps.filter(step => step.id !== id);
+    setSteps(updatedSteps);
+  };
+
   return (
     <div>
       <h3>Steps</h3>
@@ -288,8 +219,34 @@ function StepManager({
             marginBottom: '10px',
           }}
         >
-          <strong>{step.name}</strong>
-          <p>{step.description}</p>
+          <input
+            type="text"
+            value={step.name}
+            onChange={e => updateStep(step.id, 'name', e.target.value)}
+            style={{ display: 'block', width: '100%', marginBottom: '5px' }}
+          />
+          <textarea
+            value={step.description}
+            onChange={e => updateStep(step.id, 'description', e.target.value)}
+            style={{ display: 'block', width: '100%', marginBottom: '5px' }}
+          />
+          <textarea
+            value={step.prompt}
+            onChange={e => updateStep(step.id, 'prompt', e.target.value)}
+            style={{ display: 'block', width: '100%', marginBottom: '5px' }}
+          />
+          <button
+            onClick={() => deleteStep(step.id)}
+            style={{
+              padding: '4px 8px',
+              background: '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+            }}
+          >
+            Delete
+          </button>
         </div>
       ))}
       <button

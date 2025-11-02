@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 // Pure Monaco Editor test without any external dependencies
 export default function PureMonacoPage() {
@@ -30,13 +30,15 @@ hello();
   useEffect(() => {
     if (isClient) {
       // Dynamically import Monaco Editor only on the client side
-      import('@monaco-editor/react').then((module) => {
-        setMonacoEditor(() => module.Editor);
-        setEditorStatus('Monaco Editor module loaded successfully');
-      }).catch((error) => {
-        console.error('Failed to load Monaco Editor:', error);
-        setEditorStatus('❌ Failed to load Monaco Editor');
-      });
+      import('@monaco-editor/react')
+        .then(module => {
+          setMonacoEditor(() => module.Editor);
+          setEditorStatus('Monaco Editor module loaded successfully');
+        })
+        .catch(error => {
+          console.error('Failed to load Monaco Editor:', error);
+          setEditorStatus('❌ Failed to load Monaco Editor');
+        });
     }
   }, [isClient]);
 
@@ -62,8 +64,15 @@ hello();
     return (
       <div style={{ padding: '20px' }}>
         <h1>🎮 Pure Monaco Editor Test</h1>
-        
-        <div style={{ marginBottom: '15px', padding: '10px', background: '#e8f4f8', borderRadius: '4px' }}>
+
+        <div
+          style={{
+            marginBottom: '15px',
+            padding: '10px',
+            background: '#e8f4f8',
+            borderRadius: '4px',
+          }}
+        >
           <strong>Status:</strong> {editorStatus}
         </div>
 
@@ -78,7 +87,7 @@ hello();
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: '#f9f9f9'
+            background: '#f9f9f9',
           }}
         >
           🔄 Loading Monaco Editor...
@@ -95,9 +104,19 @@ hello();
   return (
     <div style={{ padding: '20px' }}>
       <h1>🎮 Pure Monaco Editor Test</h1>
-      <p>Testing Monaco Editor with zero external dependencies (no tRPC, no providers):</p>
+      <p>
+        Testing Monaco Editor with zero external dependencies (no tRPC, no
+        providers):
+      </p>
 
-      <div style={{ marginBottom: '15px', padding: '10px', background: '#e8f4f8', borderRadius: '4px' }}>
+      <div
+        style={{
+          marginBottom: '15px',
+          padding: '10px',
+          background: '#e8f4f8',
+          borderRadius: '4px',
+        }}
+      >
         <strong>Status:</strong> {editorStatus}
       </div>
 
@@ -130,13 +149,16 @@ hello();
             acceptSuggestionOnCommitCharacter: true,
             tabCompletion: 'on',
           }}
-          onChange={(value) => {
+          onChange={value => {
             setEditorValue(value || '');
             console.log('✅ Editor content changed');
           }}
           onMount={(editor, monaco) => {
             setEditorStatus('✅ Monaco Editor loaded and ready!');
-            console.log('✅ Monaco Editor mounted successfully!', { editor, monaco });
+            console.log('✅ Monaco Editor mounted successfully!', {
+              editor,
+              monaco,
+            });
           }}
           loading={
             <div style={{ padding: '20px', textAlign: 'center' }}>
@@ -174,15 +196,21 @@ hello();
           <strong>Client-side rendering:</strong>{' '}
           {isClient ? '✅ Active' : '❌ Not ready'}
         </p>
-        <p><strong>Editor status:</strong> {editorStatus}</p>
+        <p>
+          <strong>Editor status:</strong> {editorStatus}
+        </p>
         <p>
           <strong>Editor value length:</strong> {editorValue.length} characters
         </p>
         <p>
           <strong>Monaco package:</strong> @monaco-editor/react@4.7.0
         </p>
-        <p><strong>Loading method:</strong> Pure dynamic import (no dependencies)</p>
-        <p><strong>Dependencies:</strong> None (tRPC-free)</p>
+        <p>
+          <strong>Loading method:</strong> Pure dynamic import (no dependencies)
+        </p>
+        <p>
+          <strong>Dependencies:</strong> None (tRPC-free)
+        </p>
       </div>
     </div>
   );
