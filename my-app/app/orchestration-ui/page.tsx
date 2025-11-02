@@ -15,25 +15,165 @@ type Step = {
   name: string;
   description: string;
   prompt: string;
+  pattern?: OrchestrationPattern;
+  patternConfig?: any;
+};
+
+type OrchestrationPattern =
+  | 'sequential'
+  | 'parallel'
+  | 'branch'
+  | 'retry'
+  | 'while'
+  | 'forEach'
+  | 'switch';
+
+const complexOrchestrationTemplates = {
+  'research-analysis': {
+    name: 'Research & Analysis Pipeline',
+    description: 'Parallel research followed by sequential analysis',
+    steps: [
+      {
+        id: '1',
+        name: 'Parallel Research',
+        description: 'Research multiple aspects simultaneously',
+        prompt: 'Research different aspects: technical, market, competition',
+        pattern: 'parallel' as OrchestrationPattern,
+        patternConfig: {
+          branches: [
+            'Research technical feasibility and requirements',
+            'Analyze market size and opportunities',
+            'Study competitive landscape and positioning',
+          ],
+        },
+      },
+      {
+        id: '2',
+        name: 'Synthesis Analysis',
+        description: 'Synthesize research findings',
+        prompt:
+          'Analyze and synthesize the research findings into key insights',
+        pattern: 'sequential' as OrchestrationPattern,
+      },
+      {
+        id: '3',
+        name: 'Strategic Recommendations',
+        description: 'Generate actionable recommendations',
+        prompt: 'Based on the analysis, provide strategic recommendations',
+        pattern: 'sequential' as OrchestrationPattern,
+      },
+    ],
+  },
+  'content-creation': {
+    name: 'Multi-Stage Content Creation',
+    description: 'Iterative content creation with quality checks',
+    steps: [
+      {
+        id: '1',
+        name: 'Content Outline',
+        description: 'Create detailed content outline',
+        prompt: 'Create a comprehensive outline for the content',
+        pattern: 'sequential' as OrchestrationPattern,
+      },
+      {
+        id: '2',
+        name: 'Draft Creation',
+        description: 'Create content draft with retry logic',
+        prompt: 'Write a high-quality draft based on the outline',
+        pattern: 'retry' as OrchestrationPattern,
+        patternConfig: {
+          maxAttempts: 3,
+          successCondition:
+            'Content length > 500 words and includes key points',
+        },
+      },
+      {
+        id: '3',
+        name: 'Quality Review',
+        description: 'Review and improve content quality',
+        prompt: 'Review content for clarity, grammar, and engagement',
+        pattern: 'branch' as OrchestrationPattern,
+        patternConfig: {
+          condition: 'Quality score > 8',
+          trueBranch: 'Finalize and format content',
+          falseBranch: 'Revise and improve content',
+        },
+      },
+    ],
+  },
+  'data-processing': {
+    name: 'Iterative Data Processing',
+    description: 'Process data items with conditional logic',
+    steps: [
+      {
+        id: '1',
+        name: 'Data Validation',
+        description: 'Validate each data item',
+        prompt: 'Validate and clean the data item',
+        pattern: 'forEach' as OrchestrationPattern,
+        patternConfig: {
+          items: ['Dataset A', 'Dataset B', 'Dataset C'],
+        },
+      },
+      {
+        id: '2',
+        name: 'Processing Logic',
+        description: 'Apply different processing based on data type',
+        prompt: 'Process data based on its characteristics',
+        pattern: 'switch' as OrchestrationPattern,
+        patternConfig: {
+          cases: {
+            numerical: 'Apply statistical analysis',
+            textual: 'Perform NLP processing',
+            mixed: 'Apply hybrid analysis',
+            default: 'Standard processing',
+          },
+        },
+      },
+      {
+        id: '3',
+        name: 'Continuous Monitoring',
+        description: 'Monitor processing until completion',
+        prompt: 'Monitor and verify processing completion',
+        pattern: 'while' as OrchestrationPattern,
+        patternConfig: {
+          condition: 'Processing not complete',
+          maxIterations: 10,
+        },
+      },
+    ],
+  },
 };
 
 const initialRoles: Role[] = [
-  { id: '1', name: 'Researcher', description: 'Gathers information' },
-  { id: '2', name: 'Writer', description: 'Writes content' },
+  {
+    id: '1',
+    name: 'Researcher',
+    description: 'Gathers and analyzes information',
+  },
+  { id: '2', name: 'Writer', description: 'Creates engaging content' },
+  {
+    id: '3',
+    name: 'Analyst',
+    description: 'Provides data insights and recommendations',
+  },
+  { id: '4', name: 'Reviewer', description: 'Quality assurance and feedback' },
 ];
 
 const initialSteps: Step[] = [
   {
     id: '1',
-    name: 'Step 1',
-    description: 'Initial research',
-    prompt: 'Research the topic',
+    name: 'Research Phase',
+    description: 'Initial research and data gathering',
+    prompt: 'Research the topic thoroughly',
+    pattern: 'sequential',
   },
   {
     id: '2',
-    name: 'Step 2',
-    description: 'Drafting the document',
-    prompt: 'Draft the document',
+    name: 'Analysis Phase',
+    description: 'Analyze gathered information',
+    prompt: 'Analyze the research findings',
+    pattern: 'sequential',
   },
 ];
 
@@ -42,16 +182,37 @@ export default function OrchestrationUIPage() {
   const [steps, setSteps] = useState<Step[]>(initialSteps);
   const [showRoles, setShowRoles] = useState(true);
   const [results, setResults] = useState<any>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [isRunning, setIsRunning] = useState(false);
 
   const runOrchestration = trpc.runOrchestration.useMutation();
 
+  const loadTemplate = (templateKey: string) => {
+    const template = complexOrchestrationTemplates[templateKey as keyof typeof complexOrchestrationTemplates];
+    if (template) {
+      setSteps(template.steps);
+      setSelectedTemplate(templateKey);
+    }
+  };
+
   const handleRunOrchestration = async () => {
-    const orchestrationConfig = {
-      roles: roles.map(({ name, description }) => ({ name, description })),
-      steps: steps.map(({ prompt }) => ({ prompt })),
-    };
-    const response = await runOrchestration.mutateAsync(orchestrationConfig);
-    setResults(response);
+    setIsRunning(true);
+    try {
+      const orchestrationConfig = {
+        roles: roles.map(({ name, description }) => ({ name, description })),
+        steps: steps.map(({ prompt, pattern, patternConfig }) => ({ 
+          prompt, 
+          pattern: pattern || 'sequential',
+          patternConfig: patternConfig || {}
+        })),
+      };
+      const response = await runOrchestration.mutateAsync(orchestrationConfig);
+      setResults(response);
+    } catch (error) {
+      setResults({ error: error.message });
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   return (
@@ -60,117 +221,202 @@ export default function OrchestrationUIPage() {
         padding: '20px',
         fontFamily: 'system-ui',
         display: 'flex',
+        flexDirection: 'column',
         gap: '20px',
       }}
     >
-      {/* Left Panel: Roles and Steps */}
-      <div
-        style={{
-          width: '400px',
-          border: '1px solid #ccc',
-          borderRadius: '8px',
-          padding: '15px',
-        }}
-      >
-        <h2>Orchestration</h2>
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-          <button
-            onClick={() => setShowRoles(true)}
-            style={{
-              padding: '8px',
-              background: showRoles ? '#007acc' : '#eee',
-              color: showRoles ? 'white' : 'black',
-              border: 'none',
-              borderRadius: '4px',
-            }}
-          >
-            Roles
-          </button>
-          <button
-            onClick={() => setShowRoles(false)}
-            style={{
-              padding: '8px',
-              background: !showRoles ? '#007acc' : '#eee',
-              color: !showRoles ? 'white' : 'black',
-              border: 'none',
-              borderRadius: '4px',
-            }}
-          >
-            Steps
-          </button>
-        </div>
-        {showRoles ? (
-          <RoleManager />
-        ) : (
-          <StepManager steps={steps} setSteps={setSteps} />
-        )}
+      {/* Header */}
+      <div style={{ textAlign: 'center' }}>
+        <h1>🌋 Advanced Orchestration UI</h1>
+        <p>Test complex orchestration patterns with volcano-sdk</p>
       </div>
 
-      {/* Middle Panel: Visualization */}
+      {/* Template Selector */}
       <div
         style={{
-          flex: 1,
           border: '1px solid #ccc',
           borderRadius: '8px',
           padding: '15px',
+          background: '#f8f9fa',
         }}
       >
-        <h2>Flow Visualization</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          {steps.map((step, index) => (
-            <div
-              key={step.id}
-              style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+        <h3>📋 Complex Orchestration Templates</h3>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          {Object.entries(complexOrchestrationTemplates).map(([key, template]) => (
+            <button
+              key={key}
+              onClick={() => loadTemplate(key)}
+              style={{
+                padding: '10px 15px',
+                background: selectedTemplate === key ? '#007acc' : '#e9ecef',
+                color: selectedTemplate === key ? 'white' : 'black',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
             >
-              <div
-                style={{
-                  padding: '15px',
-                  border: '1px solid #007acc',
-                  borderRadius: '4px',
-                  background: '#f0f8ff',
-                }}
-              >
-                {step.name}
-              </div>
-              {index < steps.length - 1 && (
-                <div style={{ fontSize: '24px' }}>→</div>
-              )}
-            </div>
+              {template.name}
+            </button>
           ))}
         </div>
-        <button
-          onClick={handleRunOrchestration}
-          style={{
-            marginTop: '20px',
-            padding: '10px',
-            background: '#28a745',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-          }}
-        >
-          Run Orchestration
-        </button>
+        {selectedTemplate && (
+          <p style={{ marginTop: '10px', fontStyle: 'italic' }}>
+            {complexOrchestrationTemplates[selectedTemplate as keyof typeof complexOrchestrationTemplates].description}
+          </p>
+        )}
       </div>
 
-      {/* Right Panel: Results */}
-      <div
-        style={{
-          width: '400px',
-          border: '1px solid #ccc',
-          borderRadius: '8px',
-          padding: '15px',
-        }}
-      >
-        <h2>Results</h2>
-        {results ? (
-          <pre>{JSON.stringify(results, null, 2)}</pre>
-        ) : (
-          <p>No results yet.</p>
-        )}
+      {/* Main Content */}
+      <div style={{ display: 'flex', gap: '20px', minHeight: '600px' }}>
+        {/* Left Panel: Roles and Steps */}
+        <div
+          style={{
+            width: '400px',
+            border: '1px solid #ccc',
+            borderRadius: '8px',
+            padding: '15px',
+          }}
+        >
+          <h2>Configuration</h2>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+            <button
+              onClick={() => setShowRoles(true)}
+              style={{
+                padding: '8px',
+                background: showRoles ? '#007acc' : '#eee',
+                color: showRoles ? 'white' : 'black',
+                border: 'none',
+                borderRadius: '4px',
+              }}
+            >
+              Roles ({roles.length})
+            </button>
+            <button
+              onClick={() => setShowRoles(false)}
+              style={{
+                padding: '8px',
+                background: !showRoles ? '#007acc' : '#eee',
+                color: !showRoles ? 'white' : 'black',
+                border: 'none',
+                borderRadius: '4px',
+              }}
+            >
+              Steps ({steps.length})
+            </button>
+          </div>
+          {showRoles ? (
+            <RoleManager />
+          ) : (
+            <StepManager steps={steps} setSteps={setSteps} />
+          )}
+        </div>
+
+        {/* Middle Panel: Enhanced Visualization */}
+        <div
+          style={{
+            flex: 1,
+            border: '1px solid #ccc',
+            borderRadius: '8px',
+            padding: '15px',
+          }}
+        >
+          <h2>🔄 Flow Visualization</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            {steps.map((step, index) => (
+              <div
+                key={step.id}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+              >
+                <div
+                  style={{
+                    padding: '15px',
+                    border: `2px solid ${getPatternColor(step.pattern)}`,
+                    borderRadius: '8px',
+                    background: `${getPatternColor(step.pattern)}15`,
+                    minWidth: '200px',
+                  }}
+                >
+                  <div style={{ fontWeight: 'bold' }}>{step.name}</div>
+                  <div style={{ fontSize: '12px', color: '#666' }}>
+                    Pattern: {step.pattern || 'sequential'}
+                  </div>
+                  <div style={{ fontSize: '11px', marginTop: '5px' }}>
+                    {step.description}
+                  </div>
+                  {step.patternConfig && (
+                    <div style={{ fontSize: '10px', marginTop: '5px', background: '#f0f0f0', padding: '3px', borderRadius: '3px' }}>
+                      {JSON.stringify(step.patternConfig, null, 1)}
+                    </div>
+                  )}
+                </div>
+                {index < steps.length - 1 && (
+                  <div style={{ fontSize: '24px' }}>→</div>
+                )}
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={handleRunOrchestration}
+            disabled={isRunning}
+            style={{
+              marginTop: '20px',
+              padding: '12px 24px',
+              background: isRunning ? '#6c757d' : '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '16px',
+              cursor: isRunning ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {isRunning ? '🔄 Running...' : '🚀 Run Complex Orchestration'}
+          </button>
+        </div>
+
+        {/* Right Panel: Enhanced Results */}
+        <div
+          style={{
+            width: '400px',
+            border: '1px solid #ccc',
+            borderRadius: '8px',
+            padding: '15px',
+          }}
+        >
+          <h2>📊 Results</h2>
+          {results ? (
+            <div style={{ maxHeight: '500px', overflow: 'auto' }}>
+              {results.error ? (
+                <div style={{ color: 'red', padding: '10px', background: '#ffe6e6', borderRadius: '4px' }}>
+                  <strong>Error:</strong> {results.error}
+                </div>
+              ) : (
+                <pre style={{ fontSize: '12px', background: '#f8f9fa', padding: '10px', borderRadius: '4px' }}>
+                  {JSON.stringify(results, null, 2)}
+                </pre>
+              )}
+            </div>
+          ) : (
+            <p style={{ color: '#666', fontStyle: 'italic' }}>
+              No results yet. Select a template and run the orchestration.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
+}
+
+function getPatternColor(pattern?: OrchestrationPattern): string {
+  const colors = {
+    sequential: '#007acc',
+    parallel: '#28a745', 
+    branch: '#ffc107',
+    retry: '#dc3545',
+    while: '#6f42c1',
+    forEach: '#fd7e14',
+    switch: '#20c997',
+  };
+  return colors[pattern || 'sequential'] || '#007acc';
 }
 
 function StepManager({
