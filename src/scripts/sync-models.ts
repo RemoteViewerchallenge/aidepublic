@@ -1,6 +1,7 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import 'dotenv/config';
 import pool from '../db/index.js';
-import { GeminiAdapter } from '../adapters/GeminiAdapter.js';
+import { getEnv } from '../utils/env.js';
 
 async function syncModels() {
   let client;
@@ -11,35 +12,52 @@ async function syncModels() {
     // Clear the existing models table
     await client.query('TRUNCATE TABLE models');
 
-    // Fetch AI Studio models directly from Gemini API
-    console.log('🔍 Fetching AI Studio models from Gemini API...');
-    const geminiAdapter = new GeminiAdapter();
-    
-    if (geminiAdapter.isEnabled) {
-      const models = await geminiAdapter.fetchAvailableModels();
-      console.log(`📥 Found ${models.length} AI Studio models`);
-      
-      for (const model of models) {
-        await client.query(
-          `INSERT INTO models (id, provider, name, description, context_length, parameters, tool_calling, vision, reasoning, embedding, raw_data)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-          [
-            model.id,
-            'aistudio',
-            model.name,
-            model.id, // Use id as description for now
-            model.contextWindow || 0,
-            null,
-            model.supportsToolUse || false,
-            false, // Vision support to be determined
-            false, // Reasoning support to be determined
-            false, // Not embedding models
-            JSON.stringify(model),
-          ]
-        );
-      }
+    // Fetch AI Studio models directly from Google's API
+    console.log(
+      '🔍 Fetching AI Studio models from Google Generative AI API...'
+    );
+
+    const apiKey = getEnv('AI_STUDIO_API_KEY');
+    if (!apiKey) {
+      console.log(
+        '⚠️  AI_STUDIO_API_KEY not found - skipping AI Studio models'
+      );
     } else {
-      console.log('⚠️  Gemini API not available - check GEMINI_API_KEY');
+      try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const models = await (genAI as any).models.list();
+
+        console.log(`📥 Found ${models.models?.length || 0} AI Studio models`);
+
+        if (models.models) {
+          for (const model of models.models) {
+            const isEmbedding =
+              model.supportedGenerationMethods?.includes('embedContent');
+            const hasTools =
+              model.supportedGenerationMethods?.includes('generateContent');
+
+            await client.query(
+              `INSERT INTO models (id, provider, name, description, context_length, parameters, tool_calling, vision, reasoning, embedding, raw_data)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+              [
+                model.name,
+                'aistudio',
+                model.displayName || model.name?.replace('models/', ''),
+                model.description || '',
+                model.inputTokenLimit || 0,
+                null,
+                hasTools || false,
+                false, // Vision to be determined from model name/capabilities
+                false, // Reasoning to be determined
+                isEmbedding || false,
+                JSON.stringify(model),
+              ]
+            );
+          }
+        }
+      } catch (error) {
+        console.error('❌ Failed to fetch AI Studio models:', error);
+      }
     }
 
     // Skip OpenRouter models - only use AI Studio models
