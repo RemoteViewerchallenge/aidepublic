@@ -34,6 +34,14 @@ export default function HomePage() {
               📝 <strong>Basic Workspace</strong> - Simple Monaco workspace
             </Link>
           </li>
+          <li>
+            <Link
+              href="/orchestration-ui"
+              style={{ color: '#007acc', textDecoration: 'none' }}
+            >
+              orchestrations
+            </Link>
+          </li>
         </ul>
       </div>
 

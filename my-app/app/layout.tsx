@@ -1,3 +1,5 @@
+// my-app/app/layout.tsx
+import Provider from './_trpc/Provider';
 import './styles.css';
 
 export default function RootLayout({
@@ -7,7 +9,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning={true}>{children}</body>
+      <body>
+        <Provider>{children}</Provider>
+      </body>
     </html>
   );
 }

@@ -18,6 +18,11 @@ import { ModelSelector } from '../core/ModelSelector.js';
 import { ProviderManager } from '../core/ProviderManager.js';
 import { StateRepository } from '../state/StateRepository.js';
 // import { agent } from 'volcano-sdk';
+import {
+  createOrchestration,
+  OrchestrationConfig,
+} from '../../volcano-sdk/src/orchestration-creator.js';
+import { agent, llmOpenAI } from '../../volcano-sdk/src/volcano-sdk.js';
 import { OpenRouterAdapter } from '../adapters/OpenRouterAdapter.js';
 import { getEnv } from '../utils/env.js';
 
@@ -459,6 +464,46 @@ export const appRouter = t.router({
       }
 
       return await response.json();
+    }),
+  runOrchestration: t.procedure
+    .input(
+      z.object({
+        roles: z
+          .array(
+            z.object({
+              name: z.string(),
+              description: z.string(),
+            })
+          )
+          .optional(),
+        steps: z.array(
+          z.object({
+            prompt: z.string(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const llm = llmOpenAI({
+        apiKey: process.env.OPENAI_API_KEY!,
+        model: 'gpt-4o-mini',
+      });
+
+      const config: OrchestrationConfig = {
+        roles: input.roles?.map(role => ({
+          ...role,
+          agent: agent({
+            llm,
+            name: role.name,
+            description: role.description,
+          }),
+        })),
+        steps: input.steps,
+      };
+
+      const orchestration = createOrchestration(config);
+      const results = await orchestration.run();
+      return results;
     }),
 });
 
