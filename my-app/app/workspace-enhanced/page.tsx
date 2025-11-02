@@ -211,10 +211,12 @@ export default function EnhancedWorkspace() {
     updateStats();
   }, [currentRole.parameters]);
 
-  // Load saved roles
+  // Load saved roles (but make them short-lived - clear after session)
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('workspace-roles') || '[]');
+      // Clear saved roles after loading to make them short-lived
+      localStorage.removeItem('workspace-roles');
       setSavedRoles(saved);
       // Make all roles (current + saved) available for column assignment
       const allRoles = [currentRole, ...saved];
@@ -242,8 +244,9 @@ export default function EnhancedWorkspace() {
       const roleToSave = { ...currentRole, id: Date.now().toString() };
       const updated = [...savedRoles, roleToSave];
       setSavedRoles(updated);
-      localStorage.setItem('workspace-roles', JSON.stringify(updated));
-      alert('Role saved successfully!');
+      // Don't save to localStorage to keep roles short-lived
+      // localStorage.setItem('workspace-roles', JSON.stringify(updated));
+      alert('Role created successfully (temporary)!');
     } catch (error) {
       console.error('Failed to save role:', error);
       alert('Failed to save role');
@@ -257,7 +260,8 @@ export default function EnhancedWorkspace() {
   const deleteRole = (roleId: string) => {
     const updated = savedRoles.filter(r => r.id !== roleId);
     setSavedRoles(updated);
-    localStorage.setItem('workspace-roles', JSON.stringify(updated));
+    // Don't persist to localStorage for short-lived roles
+    // localStorage.setItem('workspace-roles', JSON.stringify(updated));
   };
 
   // 4-column workspace functions

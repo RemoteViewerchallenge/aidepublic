@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "codemode": {
-      "command": "bun",
-      "args": ["run", "index.ts"],
-      "env": {}
-    }
-  }
-}

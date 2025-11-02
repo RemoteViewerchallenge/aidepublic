@@ -189,57 +189,51 @@ export class ModelSelector {
         return true;
       };
 
-      const pickBest = (candidates: any[]): any | null => {
+      const pickDiverse = (candidates: any[]): any | null => {
         if (candidates.length === 0) {
           return null;
         }
 
-        const best = candidates.reduce((currentBest, candidate) => {
-          if (!currentBest) {
-            return candidate;
-          }
-
-          const bestContext = Number.isFinite(currentBest.context_length)
-            ? currentBest.context_length
-            : Number.MAX_SAFE_INTEGER;
-          const candidateContext = Number.isFinite(candidate.context_length)
-            ? candidate.context_length
-            : Number.MAX_SAFE_INTEGER;
-
+        // Sort candidates by priority and context (similar to before)
+        const sorted = candidates.sort((a, b) => {
           const getPriority = (row: any): number =>
             providerPriority.get(
               normalizeProvider(row.provider ?? row.api_provider)
             ) ?? Number.MAX_SAFE_INTEGER;
 
-          const bestPriority = getPriority(currentBest);
-          const candidatePriority = getPriority(candidate);
+          const aPriority = getPriority(a);
+          const bPriority = getPriority(b);
 
-          if (candidatePriority !== bestPriority) {
-            return candidatePriority < bestPriority ? candidate : currentBest;
+          if (aPriority !== bPriority) {
+            return aPriority - bPriority;
           }
 
-          if (candidateContext < bestContext) {
-            return candidate;
+          const aContext = Number.isFinite(a.context_length)
+            ? a.context_length
+            : Number.MAX_SAFE_INTEGER;
+          const bContext = Number.isFinite(b.context_length)
+            ? b.context_length
+            : Number.MAX_SAFE_INTEGER;
+
+          if (aContext !== bContext) {
+            return bContext - aContext; // Higher context first
           }
 
-          if (candidateContext > bestContext) {
-            return currentBest;
+          const aFree = determineIsFree(a) ? 1 : 0;
+          const bFree = determineIsFree(b) ? 1 : 0;
+          if (aFree !== bFree) {
+            return bFree - aFree; // Free first
           }
 
-          const bestFree = determineIsFree(currentBest) ? 1 : 0;
-          const candidateFree = determineIsFree(candidate) ? 1 : 0;
-          if (candidateFree !== bestFree) {
-            return candidateFree > bestFree ? candidate : currentBest;
-          }
+          const aName = a.name || a.id || '';
+          const bName = b.name || b.id || '';
+          return aName.localeCompare(bName);
+        });
 
-          const bestName = currentBest.name || currentBest.id || '';
-          const candidateName = candidate.name || candidate.id || '';
-          return candidateName.localeCompare(bestName) < 0
-            ? candidate
-            : currentBest;
-        }, null as any | null);
-
-        return best;
+        // Select randomly from the top 3 candidates for diversity
+        const topCandidates = sorted.slice(0, Math.min(3, sorted.length));
+        const randomIndex = Math.floor(Math.random() * topCandidates.length);
+        return topCandidates[randomIndex];
       };
 
       const preferFree = criteria.isFree !== false;
@@ -253,13 +247,13 @@ export class ModelSelector {
         candidates = rows.filter(row => matchesCriteria(row, false));
       }
 
-      let selectedRow = pickBest(candidates);
+      let selectedRow = pickDiverse(candidates);
 
       if (!selectedRow) {
         console.log(
           '⚠️ ModelSelector: no models matched criteria, falling back to overall best.'
         );
-        selectedRow = pickBest(rows);
+        selectedRow = pickDiverse(rows);
       }
 
       if (!selectedRow) {

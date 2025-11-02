@@ -1,4 +1,0 @@
-{
-  "proxyPort": 3001,
-  "configDirectories": ["~/.config/mcp/servers", "./mcp-servers"]
-}

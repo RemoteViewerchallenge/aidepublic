@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { StateReadError } from '../errors/customErrors';
+import { StateReadError } from '../core/customErrors';
 import { HealthStatus, ProviderId } from '../types/provider';
 
 /**
@@ -81,5 +81,3 @@ export class StateRepository {
     await this.writeJson(filePath, state);
   }
 }
-
-

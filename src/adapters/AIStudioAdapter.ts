@@ -9,8 +9,8 @@
  * - `class AIStudioAdapter`: The concrete class that implements the `ProviderAdapter` interface for AI.Studio.
  */
 
+import { ApiError, ProviderError } from '../core/customErrors.js';
 import pool from '../db/index.js';
-import { ApiError, ProviderError } from '../errors/customErrors.js';
 import {
   ChatCompletionRequest,
   ChatCompletionResponse,

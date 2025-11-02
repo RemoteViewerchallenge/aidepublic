@@ -9,7 +9,7 @@
  * - `class OpenRouterAdapter`: The concrete class that implements the `ProviderAdapter` interface for OpenRouter.
  */
 
-import { ApiError, ProviderError } from '../errors/customErrors';
+import { ApiError, ProviderError } from '../core/customErrors';
 import {
   ChatCompletionRequest,
   ChatCompletionResponse,

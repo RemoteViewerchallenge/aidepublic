@@ -11,7 +11,7 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { ProviderError } from '../errors/customErrors';
+import { ProviderError } from '../core/customErrors';
 import {
   ChatCompletionRequest,
   ChatCompletionResponse,
