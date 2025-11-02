@@ -13,27 +13,33 @@ async function syncModels() {
 
     // Fetch AI Studio models directly from Google's REST API
     console.log('🔍 Fetching AI Studio models from Google AI API...');
-    
+
     const apiKey = getEnv('AI_STUDIO_API_KEY');
     if (!apiKey) {
-      console.log('⚠️  AI_STUDIO_API_KEY not found - skipping AI Studio models');
+      console.log(
+        '⚠️  AI_STUDIO_API_KEY not found - skipping AI Studio models'
+      );
     } else {
       try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-        
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+        );
+
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         const models = data.models || [];
-        
+
         console.log(`📥 Found ${models.length} AI Studio models`);
-        
+
         for (const model of models) {
-          const isEmbedding = model.supportedGenerationMethods?.includes('embedContent');
-          const hasTools = model.supportedGenerationMethods?.includes('generateContent');
-          
+          const isEmbedding =
+            model.supportedGenerationMethods?.includes('embedContent');
+          const hasTools =
+            model.supportedGenerationMethods?.includes('generateContent');
+
           await client.query(
             `INSERT INTO models (id, provider, name, description, context_length, parameters, tool_calling, vision, reasoning, embedding, raw_data)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
