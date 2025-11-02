@@ -1,5 +1,6 @@
 import * as monaco from 'monaco-editor';
-import { MonacoLanguageClient, ErrorAction } from 'monaco-languageclient';
+import { MonacoLanguageClient } from 'monaco-languageclient';
+import { ErrorAction } from 'vscode-languageclient';
 import {
   toSocket,
   WebSocketMessageReader,
@@ -31,7 +32,7 @@ const createLanguageClient = (transports: LanguageClientTransports) => {
       // disable the default error handler
       errorHandler: {
         error: () => ({ action: ErrorAction.Continue }),
-        closed: () => ({ action: 'doNotRestart' }), // Use string literal for DoNotRestart
+        closed: () => ({ action: ErrorAction.DoNotRestart }), // Use enum value for DoNotRestart
       },
     },
     messageTransports: transports,

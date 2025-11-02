@@ -239,6 +239,10 @@ export class OpenRouterAdapter implements ProviderAdapter {
         throw new ApiError(message, this.id, response.status, responseText);
       }
 
+      // Parse the response text as JSON
+      const rawData: OpenRouterChatCompletionRawResponse =
+        JSON.parse(responseText);
+
       // Map the raw snake_case response to our internal camelCase ChatCompletionResponse
       const mappedResponse: ChatCompletionResponse = {
         id: rawData.id,
