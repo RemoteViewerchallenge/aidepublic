@@ -1,0 +1,32 @@
+{
+  "scoringRules": [
+    {
+      "id": "require-tool-use",
+      "description": "Give a bonus to models that support tool use when the prompt requires it.",
+      "promptKeywordTrigger": ["api", "call", "fetch", "run", "execute", "database"],
+      "condition": {
+        "property": "supportsToolUse",
+        "operator": "equals",
+        "value": true
+      },
+      "action": {
+        "type": "addScore",
+        "value": 100
+      }
+    },
+    {
+      "id": "long-document-context",
+      "description": "For long documents, add points based on context window size.",
+      "promptKeywordTrigger": ["summarize", "document", "long text", "article", "report", "long document"],
+      "condition": {
+        "property": "contextWindow",
+        "operator": "exists"
+      },
+      "action": {
+        "type": "addScoreFromProperty",
+        "property": "contextWindow",
+        "divisor": 10
+      }
+    }
+  ]
+}

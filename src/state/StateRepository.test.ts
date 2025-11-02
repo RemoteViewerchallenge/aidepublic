@@ -1,6 +1,7 @@
+import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { StateRepository, StateReadError } from './StateRepository';
+import { StateRepository, StateReadError } from './StateRepository.js';
 
 const TEST_DIR_NAME = 'test-data';
 

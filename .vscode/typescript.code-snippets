@@ -1,0 +1,75 @@
+{
+  "TypeScript Class": {
+    "prefix": "tsclass",
+    "body": [
+      "export class ${1:ClassName} {",
+      "  constructor(${2:params}) {",
+      "    ${3:// initialization}",
+      "  }",
+      "",
+      "  ${4:methodName}(${5:params}): ${6:ReturnType} {",
+      "    ${7:// implementation}",
+      "  }",
+      "}"
+    ],
+    "description": "Create a TypeScript class"
+  },
+  "Express Route Handler": {
+    "prefix": "expressroute",
+    "body": [
+      "app.${1:get}('${2:/path}', async (req: Request, res: Response) => {",
+      "  try {",
+      "    ${3:// implementation}",
+      "    res.json({ success: true });",
+      "  } catch (error) {",
+      "    res.status(500).json({ error: error.message });",
+      "  }",
+      "});"
+    ],
+    "description": "Express route handler with error handling"
+  },
+  "Vitest Test": {
+    "prefix": "vitest",
+    "body": [
+      "import { describe, it, expect, beforeEach, afterEach } from 'vitest';",
+      "",
+      "describe('${1:TestSuite}', () => {",
+      "  beforeEach(() => {",
+      "    ${2:// setup}",
+      "  });",
+      "",
+      "  afterEach(() => {",
+      "    ${3:// cleanup}",
+      "  });",
+      "",
+      "  it('${4:should do something}', () => {",
+      "    ${5:// test implementation}",
+      "    expect(${6:actual}).toBe(${7:expected});",
+      "  });",
+      "});"
+    ],
+    "description": "Vitest test suite"
+  },
+  "Provider Adapter": {
+    "prefix": "provideradapter",
+    "body": [
+      "import { BaseProviderAdapter } from './BaseProviderAdapter.js';",
+      "import { AIProvider, ModelInfo } from '../types/provider.js';",
+      "",
+      "export class ${1:Provider}Adapter extends BaseProviderAdapter {",
+      "  constructor() {",
+      "    super(AIProvider.${2:PROVIDER_NAME});",
+      "  }",
+      "",
+      "  async getAvailableModels(): Promise<ModelInfo[]> {",
+      "    ${3:// implementation}",
+      "  }",
+      "",
+      "  async makeRequest(modelId: string, prompt: string): Promise<string> {",
+      "    ${4:// implementation}",
+      "  }",
+      "}"
+    ],
+    "description": "AI Provider Adapter template"
+  }
+}

@@ -1,0 +1,14 @@
+# Project TODO List
+
+This file tracks outstanding tasks, bugs, and research items.
+
+---
+
+## Infrastructure & Tooling
+
+- [ ] **Investigate VS Code Ports Tab:** The "Ports" tab in VS Code is not automatically detecting or forwarding ports from processes started either manually in the terminal (like `mcp-shell-server`) or from containers managed by `podman-compose`. This may be a configuration issue with VS Code on Fedora, a Podman setting, or a missing extension. This needs to be resolved to improve the debugging experience.
+
+- [ ] **Implement Shell MCP Integration in API:** The `mcp-shell-server` is running in a container via `podman-compose`, as per `IntegrationPlan.md`. The next step is to make our API use it.
+  - [ ] Verify `SHELL_MCP_URL` in the `.env` file is correctly configured to point to the container service name (e.g., `http://mcp-shell-server:5001/mcp`).
+  - [ ] Update the `runSimpleTask` procedure in `src/server/router.ts` to make a `fetch` call to the shell MCP endpoint, as described in `IntegrationPlan.md` Step 3.
+  - [ ] Ensure the `runSimpleTask` end-to-end test in `src/server/router.e2e.test.ts` is updated to assert the expected output from the shell command (e.g., "Hello from the shell!").

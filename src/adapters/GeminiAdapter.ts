@@ -11,16 +11,16 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { createModuleLogger } from '../utils/logger';
-import { getEnv } from '../utils/env';
-import { ProviderAdapter } from './BaseProviderAdapter';
+import { createModuleLogger } from '../utils/logger.js';
+import { getEnv } from '../utils/env.js';
+import { ProviderAdapter } from './BaseProviderAdapter.js';
 import {
   Model,
   ProviderId,
   ChatCompletionRequest,
   ChatCompletionResponse,
-} from '../types/provider';
-import { ProviderError } from '../errors/customErrors';
+} from '../types/provider.js';
+import { ProviderError } from '../errors/customErrors.js';
 
 const logger = createModuleLogger('GeminiAdapter');
 
@@ -61,7 +61,7 @@ export class GeminiAdapter implements ProviderAdapter {
     } catch (error) {
       logger.error(
         { method: 'checkHealth', provider: this.id, reason: 'API_CALL_FAILED', error },
-        'Gemini API health check failed.'
+        'Gemini API health check failed.' as string
       );
       return false;
     }
@@ -81,11 +81,13 @@ export class GeminiAdapter implements ProviderAdapter {
         // The Gemini API does not directly expose a 'supportsToolUse' field
         // We'll assume models with 'functionCalling' capability support tool use.
         supportsToolUse: m.supportedGenerationMethods?.includes('functionCalling'),
+        // Gemini models are not free.
+        isFree: false,
       }));
     } catch (error) {
       logger.error(
         { method: 'fetchAvailableModels', provider: this.id, reason: 'API_CALL_FAILED', error },
-        'Failed to fetch models from Gemini API.'
+        'Failed to fetch models from Gemini API.' as string
       );
       return [];
     }
@@ -146,7 +148,7 @@ export class GeminiAdapter implements ProviderAdapter {
     } catch (error) {
       logger.error(
         { method: 'executeChatCompletion', provider: this.id, reason: 'API_CALL_FAILED', error },
-        'Failed to execute chat completion with Gemini API.'
+        'Failed to execute chat completion with Gemini API.' as string
       );
       throw new ProviderError(
         `Gemini API chat completion failed: ${(error as Error).message}`,

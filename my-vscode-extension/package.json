@@ -1,0 +1,31 @@
+{
+  "name": "my-vscode-extension",
+  "version": "1.0.0",
+  "description": "",
+  "main": "out/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "activationEvents": [
+    "onCommand:my-vscode-extension.helloWorld"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "my-vscode-extension.helloWorld",
+        "title": "Hello World"
+      }
+    ]
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/vscode": "^1.105.0",
+    "@vscode/vsce": "^3.6.2",
+    "typescript": "^5.9.3"
+  }
+}

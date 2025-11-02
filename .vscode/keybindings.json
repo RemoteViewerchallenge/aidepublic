@@ -1,0 +1,54 @@
+[
+  {
+    "key": "ctrl+shift+s",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Git: Quick Commit",
+    "when": "!inDebugMode"
+  },
+  {
+    "key": "ctrl+alt+s",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Git: Auto Commit All Changes",
+    "when": "!inDebugMode"
+  },
+  {
+    "key": "ctrl+shift+g ctrl+shift+c",
+    "command": "git.commitAll",
+    "when": "!inDebugMode"
+  },
+  {
+    "key": "ctrl+k ctrl+s",
+    "command": "git.stage",
+    "when": "!inDebugMode"
+  },
+  {
+    "key": "ctrl+k ctrl+u",
+    "command": "git.unstage",
+    "when": "!inDebugMode"
+  },
+  {
+    "key": "ctrl+shift+p ctrl+r",
+    "command": "workbench.action.reloadWindow",
+    "when": "!inDebugMode"
+  },
+  {
+    "key": "ctrl+k ctrl+p",
+    "command": "workbench.action.togglePanel",
+    "when": "!inDebugMode"
+  },
+  {
+    "key": "ctrl+shift+e",
+    "command": "workbench.view.explorer",
+    "when": "!inDebugMode"
+  },
+  {
+    "key": "ctrl+shift+x",
+    "command": "workbench.view.extensions",
+    "when": "!inDebugMode"
+  },
+  {
+    "key": "ctrl+shift+y",
+    "command": "workbench.debug.action.toggleRepl",
+    "when": "!inDebugMode"
+  }
+]

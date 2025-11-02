@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # Our main application, the Arbitrage Engine
+  arbitrage-engine:
+    build: .
+    # This command overrides the Dockerfile's CMD for development.
+    command: npm run dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    # Mount the local source code into the container.
+    # This allows for hot-reloading without rebuilding the image.
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      LOG_LEVEL: debug
+    depends_on:
+      mcp-shell-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/healthz"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  # The Modular Capability Provider (MCP) for shell execution.
+  mcp-shell-server:
+    build:
+      context: ./mcp-shell
+    ports: # This maps port 5001 inside the container to port 5001 on your host machine.
+      - "5001:5001"
+    # Add a health check to ensure the service is fully running before
+    # the arbitrage-engine starts. This is more reliable with podman-compose.
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "5001"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    environment:
+      LOG_LEVEL: debug

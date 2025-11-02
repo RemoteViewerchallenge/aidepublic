@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { StateReadError } from '../errors/customErrors';
-import { ProviderId, HealthStatus } from '../types/provider';
+import { StateReadError } from '../errors/customErrors.js';
+import { ProviderId, HealthStatus } from '../types/provider.js';
 
 /**
  * @file This module's only job is to safely read and write data to the filesystem.
@@ -30,7 +30,7 @@ export interface StoredProviderState {
 export class StateRepository {
   private baseDir: string;
 
-  constructor(relativeBaseDir: string = 'data') {
+  constructor(relativeBaseDir: string = 'state') {
     // Resolve path from the project root. This is robust for a Node.js application.
     this.baseDir = path.resolve(process.cwd(), relativeBaseDir);
   }

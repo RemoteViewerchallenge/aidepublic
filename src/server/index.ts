@@ -13,22 +13,23 @@
 // have access to the environment variables from the .env file.
 import 'dotenv/config';
  
-import express from 'express';
-import * as trpcExpress from '@trpc/server/adapters/express';
-import { appRouter } from './router';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
+import { Server } from 'http';
+import { createServer } from './server.js';
 
-const app = express();
+const app = createServer();
 const PORT = process.env.PORT || 3000;
 
-app.use(
-  '/trpc',
-  trpcExpress.createExpressMiddleware({
-    router: appRouter,
-    createContext: () => ({}), // We can add context here later if needed (e.g., for auth)
-  })
-);
-
-app.listen(PORT, () => {
-  logger.info(`🚀 Server listening on http://localhost:${PORT}`);
+app.get('/healthz', (_req, res) => {
+  // Simple health check endpoint
+  res.status(200).send('OK');
 });
+
+let server: Server;
+if (process.env.NODE_ENV !== 'test') {
+  server = app.listen(PORT, () => {
+    logger.info(`🚀 Server listening on http://localhost:${PORT}` as string);
+  });
+}
+
+export { app, server };

@@ -1,0 +1,14 @@
+# Ignore files not needed in the container image to keep it small and secure.
+
+.git
+.gitignore
+.dockerignore
+
+# Dependencies will be installed inside the container
+node_modules
+
+# Build output will be created inside the container
+dist
+
+README.md
+docs/

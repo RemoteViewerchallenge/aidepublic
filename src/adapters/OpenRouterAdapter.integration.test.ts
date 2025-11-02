@@ -1,14 +1,16 @@
-import { OpenRouterAdapter } from './OpenRouterAdapter';
-import { getEnv } from '../utils/env';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { OpenRouterAdapter } from './OpenRouterAdapter.js';
+import { getEnv } from '../utils/env.js';
+import { Model } from '../types/provider.js';
 
-describe('OpenRouterAdapter (Integration)', () => {
+// This test makes real API calls and will be skipped if the API key is not provided.
+const API_KEY = getEnv('OPENROUTER_API_KEY');
+const describeIf = API_KEY ? describe : describe.skip;
+
+describeIf('OpenRouterAdapter (Integration)', () => {
   let adapter: OpenRouterAdapter;
 
   beforeAll(() => {
-    const apiKey = getEnv('OPENROUTER_API_KEY');
-    if (!apiKey) {
-      throw new Error('OPENROUTER_API_KEY is not set. Integration tests cannot run.');
-    }
     adapter = new OpenRouterAdapter();
   });
 
@@ -23,8 +25,8 @@ describe('OpenRouterAdapter (Integration)', () => {
 
   it('fetchAvailableModels() should return a list of models', async () => {
     const models = await adapter.fetchAvailableModels();
-    expect(models.length).toBeGreaterThan(0);
-    const freeModel = models.find(m => m.id.includes('mistral'));
+    expect(models.length, 'Expected to fetch models from OpenRouter, but received an empty list. Check API key and network.').toBeGreaterThan(0);
+    const freeModel = models.find((m: Model) => m.id.includes('mistral'));
     expect(freeModel).toBeDefined();
     expect(freeModel?.apiProvider).toBe('openrouter');
     expect(freeModel?.sourceProvider).toBe('mistralai');

@@ -11,7 +11,7 @@
  * - `interface ProviderAdapter`: The core contract with methods like `checkHealth()`, `fetchAvailableModels()`, and `executeChatCompletion()`.
  */ 
 
-import { Model, ProviderId, ChatCompletionRequest, ChatCompletionResponse } from '../types/provider';
+import { Model, ProviderId, ChatCompletionRequest, ChatCompletionResponse } from '../types/provider.js';
 
 /**
  * The interface that all provider adapters must implement.

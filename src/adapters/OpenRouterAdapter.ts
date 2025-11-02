@@ -9,16 +9,16 @@
  * - `class OpenRouterAdapter`: The concrete class that implements the `ProviderAdapter` interface for OpenRouter.
  */
 
-import { createModuleLogger } from '../utils/logger';
-import { getEnv } from '../utils/env';
-import { ProviderAdapter } from './BaseProviderAdapter';
+import { ProviderError } from '../errors/customErrors.js';
 import {
-  Model,
-  ProviderId,
   ChatCompletionRequest,
   ChatCompletionResponse,
-} from '../types/provider';
-import { ProviderError } from '../errors/customErrors';
+  Model,
+  ProviderId,
+} from '../types/provider.js';
+import { getEnv } from '../utils/env.js';
+import { createModuleLogger } from '../utils/logger.js';
+import { ProviderAdapter } from './BaseProviderAdapter.js';
 
 const logger = createModuleLogger('OpenRouterAdapter');
 
@@ -27,17 +27,10 @@ const OPENROUTER_API_BASE = 'https://openrouter.ai/api/v1';
 /**
  * Type definitions for the raw data structures returned by the OpenRouter API.
  */
-interface OpenRouterModelData {
-  id: string;
-  name: string;
-  context_length?: number;
-  architecture?: {
-    instruct_type?: string;
-  };
-}
-
 interface OpenRouterModelsResponse {
-  data: OpenRouterModelData[];
+  // We use a generic Record to capture all available data from the API,
+  // rather than enforcing a strict, limited schema.
+  data: Record<string, any>[];
 }
 
 interface OpenRouterChatCompletionRawResponse {
@@ -70,7 +63,10 @@ export class OpenRouterAdapter implements ProviderAdapter {
       );
     } else {
       this.isEnabled = true;
-      logger.info({ method: 'constructor' }, 'OpenRouter provider initialized.');
+      logger.info(
+        { method: 'constructor' },
+        'OpenRouter provider initialized.'
+      );
     }
   }
 
@@ -78,12 +74,33 @@ export class OpenRouterAdapter implements ProviderAdapter {
     if (!this.isEnabled) return false;
     // A simple fetch to the models endpoint serves as a health check.
     try {
-      const response = await fetch(`${OPENROUTER_API_BASE}/models`);
+      const response = await fetch(`${OPENROUTER_API_BASE}/models`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+      });
+      if (!response.ok) {
+        logger.error(
+          {
+            method: 'checkHealth',
+            provider: this.id,
+            status: response.status,
+            statusText: response.statusText,
+          },
+          'OpenRouter API health check failed with non-OK status.' as string
+        );
+      }
       return response.ok;
     } catch (error) {
       logger.error(
-        { method: 'checkHealth', provider: this.id, reason: 'API_CALL_FAILED', error },
-        'OpenRouter API health check failed.'
+        {
+          method: 'checkHealth',
+          provider: this.id,
+          reason: 'API_CALL_FAILED',
+          error,
+        },
+        'OpenRouter API health check failed.' as string
       );
       return false;
     }
@@ -93,29 +110,77 @@ export class OpenRouterAdapter implements ProviderAdapter {
     if (!this.isEnabled) return [];
 
     try {
-      const response = await fetch(`${OPENROUTER_API_BASE}/models`);
+      const response = await fetch(`${OPENROUTER_API_BASE}/models`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+      });
       const responseData = (await response.json()) as OpenRouterModelsResponse;
 
-      return responseData.data.map((m: OpenRouterModelData) => ({
-        id: m.id,
-        name: m.name,
-        apiProvider: this.id,
-        // Extract the source provider from the model ID (e.g., "mistralai/mistral-7b" -> "mistralai")
-        // This is crucial for provider-specific rate limiting.
-        sourceProvider: m.id.split('/')[0],
-        contextWindow: m.context_length,
-        supportsToolUse: m.architecture?.instruct_type === 'function_calling',
-      }));
+      // --- For debugging: Save the raw API response to a file ---
+      try {
+        const fs = await import('fs/promises');
+        const path = await import('path');
+        const outputPath = path.resolve(
+          process.cwd(),
+          'data',
+          'openrouter-models-raw.json'
+        );
+        await fs.mkdir(path.dirname(outputPath), { recursive: true });
+        await fs.writeFile(outputPath, JSON.stringify(responseData, null, 2));
+        logger.info(
+          { method: 'fetchAvailableModels', path: outputPath },
+          'Successfully saved raw OpenRouter models response to file.' as string
+        );
+      } catch (writeError) {
+        logger.error(
+          { method: 'fetchAvailableModels', error: writeError },
+          'Failed to save raw OpenRouter models response.' as string
+        );
+      }
+      // --- End debugging code ---
+
+      const models = responseData.data.map((m: Record<string, any>) => {
+        const isFree = m.pricing
+          ? Object.values(m.pricing).every(price => price === '0')
+          : m.id.endsWith(':free');
+
+        return {
+          ...m, // Pass through all original fields from the API
+          id: m.id,
+          name: m.name,
+          apiProvider: this.id,
+          sourceProvider: m.id.split('/'),
+          contextWindow: m.context_length || m.max_context_length,
+          isFree,
+          supportsToolUse:
+            m.architecture?.instruct_type === 'function_calling' ||
+            m.architecture?.tool_use === true,
+        };
+      });
+
+      // Sort models to prioritize free ones
+      models.sort((a, b) => (b.isFree ? 1 : 0) - (a.isFree ? 1 : 0));
+
+      return models;
     } catch (error) {
       logger.error(
-        { method: 'fetchAvailableModels', provider: this.id, reason: 'API_CALL_FAILED', error },
-        'Failed to fetch models from OpenRouter API.'
+        {
+          method: 'fetchAvailableModels',
+          provider: this.id,
+          reason: 'API_CALL_FAILED',
+          error,
+        },
+        'Failed to fetch models from OpenRouter API.' as string
       );
       return [];
     }
   }
 
-  async executeChatCompletion(request: ChatCompletionRequest): Promise<ChatCompletionResponse> {
+  async executeChatCompletion(
+    request: ChatCompletionRequest
+  ): Promise<ChatCompletionResponse> {
     if (!this.isEnabled || !this.apiKey) {
       throw new ProviderError('OpenRouter adapter is not enabled.', this.id);
     }
@@ -124,7 +189,7 @@ export class OpenRouterAdapter implements ProviderAdapter {
       const response = await fetch(`${OPENROUTER_API_BASE}/chat/completions`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -137,10 +202,13 @@ export class OpenRouterAdapter implements ProviderAdapter {
 
       if (!response.ok) {
         const errorBody = await response.text();
-        throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
+        throw new Error(
+          `API request failed with status ${response.status}: ${errorBody}`
+        );
       }
 
-      const rawData = (await response.json()) as OpenRouterChatCompletionRawResponse;
+      const rawData =
+        (await response.json()) as OpenRouterChatCompletionRawResponse;
 
       // Map the raw snake_case response to our internal camelCase ChatCompletionResponse
       const mappedResponse: ChatCompletionResponse = {
@@ -160,11 +228,19 @@ export class OpenRouterAdapter implements ProviderAdapter {
       return mappedResponse;
     } catch (error) {
       logger.error(
-        { method: 'executeChatCompletion', provider: this.id, modelId: request.model, reason: 'API_CALL_FAILED', error },
-        'Failed to execute chat completion with OpenRouter API.'
+        {
+          method: 'executeChatCompletion',
+          provider: this.id,
+          modelId: request.model,
+          reason: 'API_CALL_FAILED',
+          error,
+        },
+        'Failed to execute chat completion with OpenRouter API.' as string
       );
       throw new ProviderError(
-        `OpenRouter API chat completion failed: ${error instanceof Error ? error.message : String(error)}`,
+        `OpenRouter API chat completion failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
         this.id,
         error
       );

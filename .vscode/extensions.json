@@ -1,0 +1,50 @@
+{
+  "recommendations": [
+    // Essential TypeScript/JavaScript extensions
+    "ms-vscode.vscode-typescript-next",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+
+    // Testing
+    "vitest.explorer",
+
+    // Docker support
+    "ms-azuretools.vscode-docker",
+
+    // Git and version control
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+
+    // File management and utilities
+    "christian-kohler.path-intellisense",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-json",
+
+    // Development productivity
+    "streetsidesoftware.code-spell-checker",
+    "gruntfuggly.todo-tree",
+    "aaron-bond.better-comments",
+
+    // REST API testing (for your provider integrations)
+    "humao.rest-client",
+    "rangav.vscode-thunder-client",
+
+    // Environment management
+    "mikestead.dotenv",
+
+    // AI and completion tools
+    "github.copilot",
+    "github.copilot-chat",
+    "continue.continue",
+    "tabnine.tabnine-vscode",
+    "codeium.codeium",
+
+    // Auto-commit and Git tools
+    "vsls-contrib.gitdoc",
+
+    // Additional useful extensions
+    "ms-vscode.vscode-npm-script",
+    "formulahendry.auto-rename-tag",
+    "ms-vscode.vscode-file-watcher"
+  ]
+}

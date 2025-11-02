@@ -119,12 +119,12 @@ ERROR: Operation failed
 
 testing
 structure
-ts
+```typescript
+import { describe, it, expect } from 'vitest';
+
 describe('ComponentName', () => {
-  describe('methodName', () => {
-    it('should handle expected case', () => {});
-    it('should handle error case', () => {});
-    it('should handle edge case', () => {});
+  it('should handle expected case', () => {
+    expect(true).toBe(true);
   });
 });
 no-magic-numbers

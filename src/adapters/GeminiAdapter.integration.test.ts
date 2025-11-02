@@ -1,5 +1,7 @@
-import { GeminiAdapter } from './GeminiAdapter';
-import { getEnv } from '../utils/env';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { GeminiAdapter } from './GeminiAdapter.js';
+import { getEnv } from '../utils/env.js';
+import { Model } from '../types/provider.js';
 
 describe.skip('GeminiAdapter (Integration)', () => {
   let adapter: GeminiAdapter;
@@ -26,7 +28,7 @@ describe.skip('GeminiAdapter (Integration)', () => {
   it('fetchAvailableModels() should return a list of models', async () => {
     const models = await adapter.fetchAvailableModels();
     expect(models.length).toBeGreaterThan(0);
-    const geminiPro = models.find(m => m.id.includes('gemini-pro'));
+    const geminiPro = models.find((m: Model) => m.id.includes('gemini-pro'));
     expect(geminiPro).toBeDefined();
     expect(geminiPro?.apiProvider).toBe('google');
     expect(geminiPro?.sourceProvider).toBe('google');

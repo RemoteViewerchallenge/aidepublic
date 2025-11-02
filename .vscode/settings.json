@@ -1,0 +1,130 @@
+{
+  // TypeScript/JavaScript settings
+  "typescript.preferences.moduleSpecifier": "relative",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "javascript.format.enable": true,
+  "typescript.format.enable": true,
+
+  // Editor settings
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+
+  // File associations
+  "files.associations": {
+    "*.ts": "typescript",
+    "*.tsx": "typescriptreact",
+    "*.js": "javascript",
+    "*.jsx": "javascriptreact"
+  },
+
+  // Search and file exclusions
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/*.log": true,
+    "**/coverage": true
+  },
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.git": true,
+    "**/.DS_Store": true
+  },
+
+  // Terminal settings - Standard VS Code integrated terminal
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.profiles.linux": {
+    "bash": {
+      "path": "bash",
+      "args": [],
+      "icon": "terminal-bash"
+    },
+    "zsh": {
+      "path": "zsh",
+      "args": [],
+      "icon": "terminal-bash"
+    }
+  },
+  "terminal.integrated.cwd": "${workspaceFolder}",
+  "terminal.integrated.fontSize": 14,
+  "terminal.integrated.fontFamily": "monospace",
+  "terminal.integrated.scrollback": 1000,
+
+  // Testing settings
+  "vitest.enable": true,
+  "vitest.commandLine": "npm run test",
+
+  // Docker settings
+  "docker.defaultPlatform": "linux/amd64",
+
+  // Git settings
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "git.autofetch": true,
+  "git.terminalAuthentication": false,
+  "git.openRepositoryInParentFolders": "always",
+
+  // Auto-commit settings
+  "git.enableCommitSigning": false,
+  "git.postCommitCommand": "none",
+  "git.allowForcePush": false,
+  "git.autoRepositoryDetection": true,
+  "files.autoSave": "onWindowChange",
+  "files.autoSaveDelay": 1000,
+
+  // GitDoc auto-commit configuration
+  "gitdoc.enabled": true,
+  "gitdoc.autoCommitDelay": 30000,
+  "gitdoc.commitMessageFormat": "Auto-save: ${date}",
+  "gitdoc.commitValidationLevel": "none",
+  "gitdoc.autoPush": "onCommit",
+  "gitdoc.pullOnOpen": true,
+
+  // Extension specific settings
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+
+  // GitHub Copilot settings
+  "github.copilot.enable": {
+    "*": true,
+    "plaintext": false,
+    "markdown": true,
+    "scminput": false
+  },
+  "github.copilot.advanced": {
+    "secret_key": "auto",
+    "length": 500,
+    "temperature": 0.1,
+    "top_p": 1,
+    "listCount": 10
+  },
+  "github.copilot.chat.localeOverride": "en",
+  "github.copilot.chat.welcomeMessage": "always",
+
+  // AI assistance settings
+  "editor.inlineSuggest.enabled": true,
+  "editor.inlineSuggest.showToolbar": "onHover",
+  "editor.suggest.preview": true,
+  "editor.acceptSuggestionOnCommitCharacter": true,
+  "editor.acceptSuggestionOnEnter": "on",
+
+  // File watching
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/.git/**": true
+  }
+}

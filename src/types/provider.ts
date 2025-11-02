@@ -24,13 +24,14 @@ export type ProviderId = 'google' | 'openrouter' | string;
 /**
  * Represents a single large language model available from a provider.
  */
-export interface Model {
+export interface Model extends Record<string, any> {
   id: string;
   name: string; // Human-readable name, e.g., "Mistral 7B Instruct"
   apiProvider: ProviderId; // The adapter used to call this model, e.g., 'openrouter'
   sourceProvider: string; // The original source of the model, e.g., 'mistralai', 'google'
   contextWindow?: number;
   supportsToolUse?: boolean;
+  isFree?: boolean;
 }
 
 /**
