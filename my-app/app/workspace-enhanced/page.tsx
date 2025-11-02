@@ -174,7 +174,11 @@ export default function EnhancedWorkspace() {
       const saved = JSON.parse(localStorage.getItem('workspace-roles') || '[]');
       setSavedRoles(saved);
       // Make all roles (current + saved) available for column assignment
-      setAvailableRoles([currentRole, ...saved]);
+      const allRoles = [currentRole, ...saved];
+      const uniqueRoles = Array.from(
+        new Map(allRoles.map(role => [role.id, role])).values()
+      );
+      setAvailableRoles(uniqueRoles);
     } catch (error) {
       console.error('Failed to load roles:', error);
     }
