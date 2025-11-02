@@ -11,16 +11,16 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { createModuleLogger } from '../utils/logger.js';
-import { getEnv } from '../utils/env.js';
-import { ProviderAdapter } from './BaseProviderAdapter.js';
+import { ProviderError } from '../errors/customErrors';
 import {
-  Model,
-  ProviderId,
   ChatCompletionRequest,
   ChatCompletionResponse,
-} from '../types/provider.js';
-import { ProviderError } from '../errors/customErrors.js';
+  Model,
+  ProviderId,
+} from '../types/provider';
+import { getEnv } from '../utils/env';
+import { createModuleLogger } from '../utils/logger';
+import { ProviderAdapter } from './BaseProviderAdapter';
 
 const logger = createModuleLogger('GeminiAdapter');
 
@@ -60,7 +60,12 @@ export class GeminiAdapter implements ProviderAdapter {
       return true;
     } catch (error) {
       logger.error(
-        { method: 'checkHealth', provider: this.id, reason: 'API_CALL_FAILED', error },
+        {
+          method: 'checkHealth',
+          provider: this.id,
+          reason: 'API_CALL_FAILED',
+          error,
+        },
         'Gemini API health check failed.' as string
       );
       return false;
@@ -80,20 +85,28 @@ export class GeminiAdapter implements ProviderAdapter {
         contextWindow: m.inputTokenLimit,
         // The Gemini API does not directly expose a 'supportsToolUse' field
         // We'll assume models with 'functionCalling' capability support tool use.
-        supportsToolUse: m.supportedGenerationMethods?.includes('functionCalling'),
+        supportsToolUse:
+          m.supportedGenerationMethods?.includes('functionCalling'),
         // Gemini models are not free.
         isFree: false,
       }));
     } catch (error) {
       logger.error(
-        { method: 'fetchAvailableModels', provider: this.id, reason: 'API_CALL_FAILED', error },
+        {
+          method: 'fetchAvailableModels',
+          provider: this.id,
+          reason: 'API_CALL_FAILED',
+          error,
+        },
         'Failed to fetch models from Gemini API.' as string
       );
       return [];
     }
   }
 
-  async executeChatCompletion(request: ChatCompletionRequest): Promise<ChatCompletionResponse> {
+  async executeChatCompletion(
+    request: ChatCompletionRequest
+  ): Promise<ChatCompletionResponse> {
     if (!this.isEnabled || !this.client) {
       throw new ProviderError('Gemini adapter is not enabled.', this.id);
     }
@@ -101,7 +114,9 @@ export class GeminiAdapter implements ProviderAdapter {
     try {
       // The Gemini API requires alternating user and model roles.
       // We also need to handle the 'system' role separately.
-      const systemInstruction = request.messages.find(msg => msg.role === 'system');
+      const systemInstruction = request.messages.find(
+        msg => msg.role === 'system'
+      );
       const contents = request.messages
         .filter(msg => msg.role !== 'system')
         .map(msg => ({
@@ -122,7 +137,7 @@ export class GeminiAdapter implements ProviderAdapter {
           maxOutputTokens: request.maxTokens,
         },
       });
-      
+
       const response = result.response;
       const text = response.text();
 
@@ -147,7 +162,12 @@ export class GeminiAdapter implements ProviderAdapter {
       };
     } catch (error) {
       logger.error(
-        { method: 'executeChatCompletion', provider: this.id, reason: 'API_CALL_FAILED', error },
+        {
+          method: 'executeChatCompletion',
+          provider: this.id,
+          reason: 'API_CALL_FAILED',
+          error,
+        },
         'Failed to execute chat completion with Gemini API.' as string
       );
       throw new ProviderError(

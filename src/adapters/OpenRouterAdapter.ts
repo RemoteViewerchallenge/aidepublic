@@ -9,16 +9,16 @@
  * - `class OpenRouterAdapter`: The concrete class that implements the `ProviderAdapter` interface for OpenRouter.
  */
 
-import { ProviderError } from '../errors/customErrors.js';
+import { ProviderError } from '../errors/customErrors';
 import {
   ChatCompletionRequest,
   ChatCompletionResponse,
   Model,
   ProviderId,
-} from '../types/provider.js';
-import { getEnv } from '../utils/env.js';
-import { createModuleLogger } from '../utils/logger.js';
-import { ProviderAdapter } from './BaseProviderAdapter.js';
+} from '../types/provider';
+import { getEnv } from '../utils/env';
+import { createModuleLogger } from '../utils/logger';
+import { ProviderAdapter } from './BaseProviderAdapter';
 
 const logger = createModuleLogger('OpenRouterAdapter');
 

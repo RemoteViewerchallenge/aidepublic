@@ -1,5 +1,5 @@
-import pool from '../db/index.js';
-import { Model } from '../types/provider.js';
+import pool from '../db/index';
+import { Model } from '../types/provider';
 
 interface ModelCriteria {
   minContext?: number;

@@ -15,13 +15,13 @@
  * - `stop()`: Clears any running background tasks, like health check timers.
  */
 
-import { ProviderAdapter } from '../adapters/BaseProviderAdapter.js';
+import { ProviderAdapter } from '../adapters/BaseProviderAdapter';
 import {
-  StateRepository,
   StoredProviderState,
-} from '../state/StateRepository.js';
-import { HealthStatus, Model, ProviderId } from '../types/provider.js';
-import { createModuleLogger } from '../utils/logger.js';
+  StateRepository,
+} from '../state/StateRepository';
+import { HealthStatus, Model, ProviderId } from '../types/provider';
+import { createModuleLogger } from '../utils/logger';
 
 const logger = createModuleLogger('ProviderManager');
 

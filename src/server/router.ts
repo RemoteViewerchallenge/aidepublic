@@ -13,18 +13,18 @@
 
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { GeminiAdapter } from '../adapters/GeminiAdapter.js';
-import { ModelSelector } from '../core/ModelSelector.js';
-import { ProviderManager } from '../core/ProviderManager.js';
-import { StateRepository } from '../state/StateRepository.js';
+import { GeminiAdapter } from '../adapters/GeminiAdapter';
+import { ModelSelector } from '../core/ModelSelector';
+import { ProviderManager } from '../core/ProviderManager';
+import { StateRepository } from '../state/StateRepository';
 // import { agent } from 'volcano-sdk';
 import {
   createOrchestration,
   OrchestrationConfig,
-} from '../../volcano-sdk/src/orchestration-creator.js';
-import { agent, llmOpenAI } from '../../volcano-sdk/src/volcano-sdk.js';
-import { OpenRouterAdapter } from '../adapters/OpenRouterAdapter.js';
-import { getEnv } from '../utils/env.js';
+} from '../../volcano-sdk/src/orchestration-creator';
+import { agent, llmOpenAI } from '../../volcano-sdk/src/volcano-sdk';
+import { OpenRouterAdapter } from '../adapters/OpenRouterAdapter';
+import { getEnv } from '../utils/env';
 
 // --- Application Composition Root ---
 // This is where we instantiate and wire together all the core components of our application.
@@ -74,7 +74,7 @@ export const appRouter = t.router({
     )
     .query(async ({ input }) => {
       // 1. Get free models directly from database instead of ProviderManager
-      const { default: pool } = await import('../db/index.js');
+      const { default: pool } = await import('../db/index');
       const result = await pool.query(`
         SELECT * FROM models 
         WHERE provider = 'openrouter'
@@ -238,7 +238,7 @@ export const appRouter = t.router({
   getModelsFromDatabase: t.procedure.query(async () => {
     try {
       // Import the pool here to avoid circular dependencies
-      const { default: pool } = await import('../db/index.js');
+      const { default: pool } = await import('../db/index');
 
       // Query AI Studio models from ai_studio_models table
       const aiStudioResult = await pool.query(`
