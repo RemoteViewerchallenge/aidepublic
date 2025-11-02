@@ -174,7 +174,26 @@ export default function EnhancedWorkspace() {
       try {
         const response = await fetch('/api/trpc/getProviderStatus');
         const data = await response.json();
-        const status = data[0].result?.data || data.result || data;
+        // Normalize tRPC response shapes. Possible shapes:
+        // - batch: [{ result: { data: ... } }]
+        // - single: { result: { data: ... } }
+        // - direct: { ... }
+        let status: any = null;
+        if (Array.isArray(data) && data.length > 0) {
+          const item = data[0];
+          status = item?.result?.data ?? item?.result ?? item;
+        } else if (data && typeof data === 'object') {
+          status = data.result?.data ?? data.result ?? data;
+        } else {
+          status = data;
+        }
+
+        if (!status) {
+          console.warn('Provider status response had unexpected shape', {
+            data,
+          });
+        }
+
         setProviderStatus(status);
       } catch (error) {
         console.error('Failed to get provider status:', error);
