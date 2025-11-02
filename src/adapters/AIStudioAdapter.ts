@@ -10,7 +10,7 @@
  */
 
 import pool from '../db/index.js';
-import { ProviderError } from '../errors/customErrors.js';
+import { ApiError, ProviderError } from '../errors/customErrors.js';
 import {
   ChatCompletionRequest,
   ChatCompletionResponse,
@@ -115,9 +115,17 @@ export class AIStudioAdapter implements ProviderAdapter {
 
       if (!response.ok) {
         const errorBody = await response.text();
-        throw new Error(
-          `API request failed with status ${response.status}: ${errorBody}`
+        const message = `API request failed with status ${response.status}: ${errorBody}`;
+        logger.error(
+          {
+            method: 'executeChatCompletion',
+            provider: this.id,
+            status: response.status,
+            errorBody,
+          },
+          message
         );
+        throw new ApiError(message, this.id, response.status, errorBody);
       }
 
       const rawData = await response.json();

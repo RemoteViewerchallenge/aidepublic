@@ -9,7 +9,7 @@
  * - `class OpenRouterAdapter`: The concrete class that implements the `ProviderAdapter` interface for OpenRouter.
  */
 
-import { ProviderError } from '../errors/customErrors';
+import { ApiError, ProviderError } from '../errors/customErrors';
 import {
   ChatCompletionRequest,
   ChatCompletionResponse,
@@ -235,29 +235,8 @@ export class OpenRouterAdapter implements ProviderAdapter {
       );
 
       if (!response.ok) {
-        throw new Error(
-          `API request failed with status ${response.status}: ${responseText}`
-        );
-      }
-
-      let rawData: OpenRouterChatCompletionRawResponse;
-      try {
-        rawData = JSON.parse(
-          responseText
-        ) as OpenRouterChatCompletionRawResponse;
-      } catch (parseError) {
-        logger.error(
-          {
-            method: 'executeChatCompletion',
-            provider: this.id,
-            modelId: request.model,
-            reason: 'INVALID_JSON',
-            responseText,
-            parseError,
-          },
-          'Failed to parse OpenRouter response as JSON.' as string
-        );
-        throw parseError;
+        const message = `API request failed with status ${response.status}: ${responseText}`;
+        throw new ApiError(message, this.id, response.status, responseText);
       }
 
       // Map the raw snake_case response to our internal camelCase ChatCompletionResponse

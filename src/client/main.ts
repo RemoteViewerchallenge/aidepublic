@@ -1,7 +1,14 @@
 import * as monaco from 'monaco-editor';
-import { MonacoLanguageClient } from 'monaco-languageclient';
-import { toSocket, WebSocketMessageReader, WebSocketMessageWriter } from 'vscode-ws-jsonrpc';
-import { BrowserMessageReader, BrowserMessageWriter } from 'vscode-languageserver-protocol/browser';
+import { MonacoLanguageClient, ErrorAction } from 'monaco-languageclient';
+import {
+  toSocket,
+  WebSocketMessageReader,
+  WebSocketMessageWriter,
+} from 'vscode-ws-jsonrpc';
+import {
+  BrowserMessageReader,
+  BrowserMessageWriter,
+} from 'vscode-languageserver-protocol/browser';
 
 const root = document.getElementById('root')!;
 
@@ -10,9 +17,12 @@ const editor = monaco.editor.create(root, {
   automaticLayout: true,
 });
 
-const createLanguageClient = (
-  transports: monaco.languages.LanguageClientTransports
-) => {
+type LanguageClientTransports = {
+  reader: WebSocketMessageReader;
+  writer: WebSocketMessageWriter;
+};
+
+const createLanguageClient = (transports: LanguageClientTransports) => {
   return new MonacoLanguageClient({
     name: 'Sample Language Client',
     clientOptions: {
@@ -20,8 +30,8 @@ const createLanguageClient = (
       documentSelector: ['typescript'],
       // disable the default error handler
       errorHandler: {
-        error: () => ({ action: monaco.languages.ErrorAction.Continue }),
-        closed: () => ({ action: monaco.languages.CloseAction.DoNotRestart }),
+        error: () => ({ action: ErrorAction.Continue }),
+        closed: () => ({ action: 'doNotRestart' }), // Use string literal for DoNotRestart
       },
     },
     messageTransports: transports,
