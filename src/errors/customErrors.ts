@@ -34,3 +34,16 @@ export class ApiError extends ProviderError {
     this.body = body;
   }
 }
+
+/**
+ * An error for when reading state from the filesystem fails.
+ */
+export class StateReadError extends Error {
+  public originalError?: any;
+
+  constructor(message: string, originalError?: any) {
+    super(message);
+    this.name = 'StateReadError';
+    this.originalError = originalError;
+  }
+}

@@ -82,4 +82,4 @@ export class StateRepository {
   }
 }
 
-export { StateReadError };
+
