@@ -228,7 +228,7 @@ export const appRouter = t.router({
   /**
    * Get all models from the unified models database table.
    * This is the new preferred method for getting model data.
-   * ONLY returns FREE OpenRouter models (all pricing fields = "0").
+   * Returns ALL AI Studio models + FREE OpenRouter models.
    */
   getModelsFromDatabase: t.procedure.query(async () => {
     try {
@@ -249,17 +249,20 @@ export const appRouter = t.router({
           embedding,
           raw_data
         FROM models 
-        WHERE provider = 'openrouter'
-          AND raw_data->'pricing'->>'image' = '0'
-          AND raw_data->'pricing'->>'prompt' = '0'
-          AND raw_data->'pricing'->>'request' = '0'
-          AND raw_data->'pricing'->>'completion' = '0'
-          AND raw_data->'pricing'->>'web_search' = '0'
-          AND raw_data->'pricing'->>'internal_reasoning' = '0'
-        ORDER BY context_length DESC
+        WHERE provider = 'aistudio'
+           OR (provider = 'openrouter'
+               AND raw_data->'pricing'->>'image' = '0'
+               AND raw_data->'pricing'->>'prompt' = '0'
+               AND raw_data->'pricing'->>'request' = '0'
+               AND raw_data->'pricing'->>'completion' = '0'
+               AND raw_data->'pricing'->>'web_search' = '0'
+               AND raw_data->'pricing'->>'internal_reasoning' = '0')
+        ORDER BY provider, context_length DESC
       `);
 
-      console.log(`🆓 Found ${result.rows.length} FREE OpenRouter models`);
+      console.log(
+        `📊 Found ${result.rows.length} models (AI Studio + FREE OpenRouter)`
+      );
 
       return result.rows.map((model: any) => ({
         id: model.id,
@@ -275,12 +278,12 @@ export const appRouter = t.router({
         },
         description: model.description,
         rawData: model.raw_data,
-        isFree: true, // All models returned are guaranteed free
+        isFree: model.provider === 'aistudio' || true, // AI Studio models are available, OpenRouter ones are guaranteed free
       }));
     } catch (error: any) {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
-        message: `Failed to fetch FREE models from database: ${error.message}`,
+        message: `Failed to fetch models from database: ${error.message}`,
       });
     }
   }),
