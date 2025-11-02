@@ -486,7 +486,7 @@ export default function RoleManager() {
                         marginTop: '5px',
                       }}
                     >
-                      {role.prompt.substring(0, 80)}...
+                      {(role.prompt || '').substring(0, 80)}...
                     </div>
                   </div>
                 ))}
