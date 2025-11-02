@@ -19,7 +19,6 @@ import { ProviderManager } from '../core/ProviderManager';
 import { StateRepository } from '../state/StateRepository';
 // import { agent } from 'volcano-sdk';
 import {
-  createOrchestration,
   createComplexOrchestration,
   OrchestrationConfig,
 } from '../../volcano-sdk/src/orchestration-creator';
@@ -483,7 +482,18 @@ export const appRouter = t.router({
         steps: z.array(
           z.object({
             prompt: z.string(),
-            pattern: z.enum(['sequential', 'parallel', 'branch', 'retry', 'while', 'forEach', 'switch']).optional().default('sequential'),
+            pattern: z
+              .enum([
+                'sequential',
+                'parallel',
+                'branch',
+                'retry',
+                'while',
+                'forEach',
+                'switch',
+              ])
+              .optional()
+              .default('sequential'),
             patternConfig: z.any().optional(),
           })
         ),
@@ -509,7 +519,7 @@ export const appRouter = t.router({
         // Create orchestration with pattern support
         const orchestration = createComplexOrchestration(config, llm);
         const results = await orchestration.run();
-        
+
         return {
           success: true,
           results,

@@ -188,7 +188,10 @@ export default function OrchestrationUIPage() {
   const runOrchestration = trpc.runOrchestration.useMutation();
 
   const loadTemplate = (templateKey: string) => {
-    const template = complexOrchestrationTemplates[templateKey as keyof typeof complexOrchestrationTemplates];
+    const template =
+      complexOrchestrationTemplates[
+        templateKey as keyof typeof complexOrchestrationTemplates
+      ];
     if (template) {
       setSteps(template.steps);
       setSelectedTemplate(templateKey);
@@ -200,10 +203,10 @@ export default function OrchestrationUIPage() {
     try {
       const orchestrationConfig = {
         roles: roles.map(({ name, description }) => ({ name, description })),
-        steps: steps.map(({ prompt, pattern, patternConfig }) => ({ 
-          prompt, 
+        steps: steps.map(({ prompt, pattern, patternConfig }) => ({
+          prompt,
           pattern: pattern || 'sequential',
-          patternConfig: patternConfig || {}
+          patternConfig: patternConfig || {},
         })),
       };
       const response = await runOrchestration.mutateAsync(orchestrationConfig);
@@ -242,26 +245,32 @@ export default function OrchestrationUIPage() {
       >
         <h3>📋 Complex Orchestration Templates</h3>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          {Object.entries(complexOrchestrationTemplates).map(([key, template]) => (
-            <button
-              key={key}
-              onClick={() => loadTemplate(key)}
-              style={{
-                padding: '10px 15px',
-                background: selectedTemplate === key ? '#007acc' : '#e9ecef',
-                color: selectedTemplate === key ? 'white' : 'black',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-              }}
-            >
-              {template.name}
-            </button>
-          ))}
+          {Object.entries(complexOrchestrationTemplates).map(
+            ([key, template]) => (
+              <button
+                key={key}
+                onClick={() => loadTemplate(key)}
+                style={{
+                  padding: '10px 15px',
+                  background: selectedTemplate === key ? '#007acc' : '#e9ecef',
+                  color: selectedTemplate === key ? 'white' : 'black',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                }}
+              >
+                {template.name}
+              </button>
+            )
+          )}
         </div>
         {selectedTemplate && (
           <p style={{ marginTop: '10px', fontStyle: 'italic' }}>
-            {complexOrchestrationTemplates[selectedTemplate as keyof typeof complexOrchestrationTemplates].description}
+            {
+              complexOrchestrationTemplates[
+                selectedTemplate as keyof typeof complexOrchestrationTemplates
+              ].description
+            }
           </p>
         )}
       </div>
@@ -321,7 +330,9 @@ export default function OrchestrationUIPage() {
           }}
         >
           <h2>🔄 Flow Visualization</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <div
+            style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}
+          >
             {steps.map((step, index) => (
               <div
                 key={step.id}
@@ -344,7 +355,15 @@ export default function OrchestrationUIPage() {
                     {step.description}
                   </div>
                   {step.patternConfig && (
-                    <div style={{ fontSize: '10px', marginTop: '5px', background: '#f0f0f0', padding: '3px', borderRadius: '3px' }}>
+                    <div
+                      style={{
+                        fontSize: '10px',
+                        marginTop: '5px',
+                        background: '#f0f0f0',
+                        padding: '3px',
+                        borderRadius: '3px',
+                      }}
+                    >
                       {JSON.stringify(step.patternConfig, null, 1)}
                     </div>
                   )}
@@ -386,11 +405,25 @@ export default function OrchestrationUIPage() {
           {results ? (
             <div style={{ maxHeight: '500px', overflow: 'auto' }}>
               {results.error ? (
-                <div style={{ color: 'red', padding: '10px', background: '#ffe6e6', borderRadius: '4px' }}>
+                <div
+                  style={{
+                    color: 'red',
+                    padding: '10px',
+                    background: '#ffe6e6',
+                    borderRadius: '4px',
+                  }}
+                >
                   <strong>Error:</strong> {results.error}
                 </div>
               ) : (
-                <pre style={{ fontSize: '12px', background: '#f8f9fa', padding: '10px', borderRadius: '4px' }}>
+                <pre
+                  style={{
+                    fontSize: '12px',
+                    background: '#f8f9fa',
+                    padding: '10px',
+                    borderRadius: '4px',
+                  }}
+                >
                   {JSON.stringify(results, null, 2)}
                 </pre>
               )}
@@ -409,7 +442,7 @@ export default function OrchestrationUIPage() {
 function getPatternColor(pattern?: OrchestrationPattern): string {
   const colors = {
     sequential: '#007acc',
-    parallel: '#28a745', 
+    parallel: '#28a745',
     branch: '#ffc107',
     retry: '#dc3545',
     while: '#6f42c1',
@@ -478,27 +511,27 @@ function StepManager({
             type="text"
             value={step.name}
             onChange={e => updateStep(step.id, 'name', e.target.value)}
-            style={{ 
-              display: 'block', 
-              width: '100%', 
+            style={{
+              display: 'block',
+              width: '100%',
               marginBottom: '8px',
               padding: '8px',
               borderRadius: '4px',
-              border: '1px solid #ddd'
+              border: '1px solid #ddd',
             }}
             placeholder="Step name"
           />
           <textarea
             value={step.description}
             onChange={e => updateStep(step.id, 'description', e.target.value)}
-            style={{ 
-              display: 'block', 
-              width: '100%', 
+            style={{
+              display: 'block',
+              width: '100%',
               marginBottom: '8px',
               padding: '8px',
               borderRadius: '4px',
               border: '1px solid #ddd',
-              resize: 'vertical'
+              resize: 'vertical',
             }}
             placeholder="Step description"
             rows={2}
@@ -506,14 +539,14 @@ function StepManager({
           <textarea
             value={step.prompt}
             onChange={e => updateStep(step.id, 'prompt', e.target.value)}
-            style={{ 
-              display: 'block', 
-              width: '100%', 
+            style={{
+              display: 'block',
+              width: '100%',
               marginBottom: '8px',
               padding: '8px',
               borderRadius: '4px',
               border: '1px solid #ddd',
-              resize: 'vertical'
+              resize: 'vertical',
             }}
             placeholder="Step prompt"
             rows={3}
@@ -527,7 +560,7 @@ function StepManager({
               marginBottom: '8px',
               padding: '8px',
               borderRadius: '4px',
-              border: '1px solid #ddd'
+              border: '1px solid #ddd',
             }}
           >
             <option value="sequential">🔄 Sequential</option>
@@ -538,53 +571,71 @@ function StepManager({
             <option value="forEach">📋 For Each</option>
             <option value="switch">🔀 Switch</option>
           </select>
-          
+
           {/* Pattern-specific configuration */}
           {step.pattern === 'parallel' && (
             <div style={{ marginBottom: '8px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Parallel Branches (JSON):</label>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>
+                Parallel Branches (JSON):
+              </label>
               <textarea
-                value={JSON.stringify(step.patternConfig?.branches || [], null, 2)}
+                value={JSON.stringify(
+                  step.patternConfig?.branches || [],
+                  null,
+                  2
+                )}
                 onChange={e => {
                   try {
                     const branches = JSON.parse(e.target.value);
                     updateStepPatternConfig(step.id, { branches });
                   } catch {}
                 }}
-                style={{ width: '100%', fontSize: '11px', fontFamily: 'monospace' }}
+                style={{
+                  width: '100%',
+                  fontSize: '11px',
+                  fontFamily: 'monospace',
+                }}
                 rows={3}
                 placeholder='["Task 1", "Task 2", "Task 3"]'
               />
             </div>
           )}
-          
+
           {step.pattern === 'retry' && (
             <div style={{ marginBottom: '8px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Max Attempts:</label>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>
+                Max Attempts:
+              </label>
               <input
                 type="number"
                 value={step.patternConfig?.maxAttempts || 3}
-                onChange={e => updateStepPatternConfig(step.id, { 
-                  ...step.patternConfig, 
-                  maxAttempts: parseInt(e.target.value) 
-                })}
+                onChange={e =>
+                  updateStepPatternConfig(step.id, {
+                    ...step.patternConfig,
+                    maxAttempts: parseInt(e.target.value),
+                  })
+                }
                 style={{ width: '100%', padding: '4px' }}
                 min="1"
                 max="10"
               />
             </div>
           )}
-          
+
           {step.pattern === 'while' && (
             <div style={{ marginBottom: '8px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Max Iterations:</label>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>
+                Max Iterations:
+              </label>
               <input
                 type="number"
                 value={step.patternConfig?.maxIterations || 5}
-                onChange={e => updateStepPatternConfig(step.id, { 
-                  ...step.patternConfig, 
-                  maxIterations: parseInt(e.target.value) 
-                })}
+                onChange={e =>
+                  updateStepPatternConfig(step.id, {
+                    ...step.patternConfig,
+                    maxIterations: parseInt(e.target.value),
+                  })
+                }
                 style={{ width: '100%', padding: '4px' }}
                 min="1"
                 max="20"
