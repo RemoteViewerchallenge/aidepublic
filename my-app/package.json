@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
-    "@tanstack/react-query": "^5.90.6",
+    "@tanstack/react-query": "^4.42.0",
     "classnames": "^2.3.2",
     "critters": "^0.0.23",
     "gridstack": "^12.3.3",
