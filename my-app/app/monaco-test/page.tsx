@@ -5,14 +5,18 @@ import { useEffect, useState } from 'react';
 
 // Dynamically import Monaco Editor to avoid SSR issues
 const Editor = dynamic(
-  () => import('@monaco-editor/react').then(mod => mod.Editor),
-  {
+  () => import('@monaco-editor/react').then((mod) => {
+    // Configure Monaco to load from node_modules instead of CDN
+    mod.loader.config({
+      paths: {
+        vs: '/monaco-editor/min/vs'
+      }
+    });
+    return mod.Editor;
+  }),
+  { 
     ssr: false,
-    loading: () => (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        Loading Monaco Editor...
-      </div>
-    ),
+    loading: () => <div style={{ padding: '20px', textAlign: 'center' }}>Loading Monaco Editor...</div>
   }
 );
 
