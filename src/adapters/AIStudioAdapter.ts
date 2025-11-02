@@ -158,4 +158,12 @@ export class AIStudioAdapter implements ProviderAdapter {
       );
     }
   }
+
+  /**
+   * Checks if the adapter can handle tool use requests.
+   * @returns {Promise<boolean>} A promise that resolves to false as tool use is not supported.
+   */
+  async canHandleToolUse(): Promise<boolean> {
+    return false;
+  }
 }

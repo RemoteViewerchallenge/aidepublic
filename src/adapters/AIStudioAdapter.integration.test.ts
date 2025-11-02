@@ -45,8 +45,8 @@ describe('AIStudioAdapter (Integration)', () => {
     expect(response.usage.totalTokens).toBeGreaterThan(0);
   });
 
-  it.skip('canHandleToolUse() should be skipped until implementation', async () => {
-    // This test is skipped as tool use is not yet implemented for AI Studio.
+  it('canHandleToolUse() should return false as it is not implemented', async () => {
+    // This test confirms that tool use is not yet implemented for AI Studio.
     await expect(adapter.canHandleToolUse()).resolves.toBe(false);
   });
 });
