@@ -16,16 +16,23 @@ import {
  * @param fetchOptions The options for the fetch request.
  * @returns A promise that resolves to the Response object.
  */
-export async function makeRequest(url: string, fetchOptions: RequestInit): Promise<Response> {
+export async function makeRequest(
+  url: string,
+  fetchOptions: RequestInit
+): Promise<Response> {
   let response: Response;
   try {
     response = await fetch(url, fetchOptions);
   } catch (e: any) {
     let err = e;
     if (err.name === 'AbortError') {
-      err = new GoogleGenerativeAIAbortError(`Request aborted when fetching ${url}: ${e.message}`);
+      err = new GoogleGenerativeAIAbortError(
+        `Request aborted when fetching ${url}: ${e.message}`
+      );
     } else {
-      err = new GoogleGenerativeAIError(`Error fetching from ${url}: ${e.message}`);
+      err = new GoogleGenerativeAIError(
+        `Error fetching from ${url}: ${e.message}`
+      );
     }
     err.stack = e.stack;
     throw err;
@@ -44,7 +51,12 @@ export async function makeRequest(url: string, fetchOptions: RequestInit): Promi
     } catch (e) {
       // ignored
     }
-    throw new GoogleGenerativeAIFetchError(`Error fetching from ${url}: [${response.status} ${response.statusText}] ${message}`, response.status, response.statusText, errorDetails);
+    throw new GoogleGenerativeAIFetchError(
+      `Error fetching from ${url}: [${response.status} ${response.statusText}] ${message}`,
+      response.status,
+      response.statusText,
+      errorDetails
+    );
   }
   return response;
 }
