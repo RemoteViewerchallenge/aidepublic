@@ -27,9 +27,9 @@
  * - `async execute(options: LlmExecuteOptions): Promise<LlmExecuteResult>`
  */
 
-import { createModuleLogger } from '../utils/logger.js';
-import { ModelSelector } from './ModelSelector.js';
-import { ProviderManager } from './ProviderManager.js';
+import { createModuleLogger } from '../utils/logger';
+import { ModelSelector } from './ModelSelector';
+import { ProviderManager } from './ProviderManager';
 
 const logger = createModuleLogger('ArbitrageEngineAdapter');
 
@@ -114,10 +114,9 @@ export class ArbitrageEngineAdapter implements Llm {
     const availableModels = await this.providerManager.getAvailableModels();
 
     // 2. Use our "brain" (ModelSelector) to select the best model for the given prompt.
-    const bestModel = this.modelSelector.selectBestModel(
-      availableModels,
-      prompt
-    );
+    const bestModel = await this.modelSelector.selectModel({
+      // We could add more sophisticated criteria here based on the prompt
+    });
 
     if (!bestModel) {
       logger.error(
