@@ -314,23 +314,11 @@ export const appRouter = t.router({
         });
       });
 
-      // Process OpenRouter models with keyword detection and free filtering
+      // Process OpenRouter models with keyword detection
+      // Note: openrouter_models table now only contains FREE models
       openRouterResult.rows.forEach((model: any) => {
         const modelName = (model.name || '').toLowerCase();
         const modelId = (model.id || '').toLowerCase();
-
-        // Check if completely free
-        const pricing = model.pricing || {};
-        const isFree =
-          pricing.image === '0' &&
-          pricing.prompt === '0' &&
-          pricing.request === '0' &&
-          pricing.completion === '0' &&
-          pricing.web_search === '0' &&
-          pricing.internal_reasoning === '0';
-
-        // Only include free models from OpenRouter
-        if (!isFree) return;
 
         const hasVision =
           modelName.includes('vision') ||
