@@ -26,8 +26,19 @@ export class ModelSelector {
     try {
       client = await pool.connect();
 
-      const result = await client.query('SELECT * FROM models');
-      let rows: any[] = Array.isArray(result.rows) ? result.rows : [];
+      let rows: any[];
+      try {
+        const result = await client.query('SELECT * FROM models');
+        rows = Array.isArray(result.rows) ? result.rows : [];
+      } catch (dbError) {
+        console.error(
+          '❌ ModelSelector: Error querying the "models" table. Does it exist?',
+          dbError
+        );
+        // If the table doesn't exist or there's a query error, return null.
+        rows = [];
+        return null;
+      }
 
       const normalizeProvider = (value: unknown): string =>
         String(value || '').toLowerCase();
