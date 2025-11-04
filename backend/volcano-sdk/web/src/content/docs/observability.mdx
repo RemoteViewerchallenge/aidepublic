@@ -1,0 +1,486 @@
+---
+title: "Observability - Volcano SDK"
+---
+
+# Observability
+
+Production-ready observability with OpenTelemetry traces and metrics. Monitor agent performance, debug failures, and optimize costs. Opt-in and fully optional.
+
+**Opt-In by Design:** Observability is disabled by default. Enable it by configuring telemetry when creating your agent. No performance impact when disabled.
+
+## OpenTelemetry Integration
+
+Volcano SDK uses OpenTelemetry (OTEL), the industry-standard observability framework. Export traces and metrics to any OTEL-compatible backend.
+
+### Quick Start
+
+**Simple Setup (Recommended):**
+
+Just pass an `endpoint` and Volcano auto-configures OpenTelemetry for you:
+
+```typescript
+import { agent, llmOpenAI, createVolcanoTelemetry } from "volcano-sdk";
+
+// Create telemetry with endpoint - auto-configures everything!
+const telemetry = createVolcanoTelemetry({
+  serviceName: "my-agent-service",
+  endpoint: "http://localhost:4318", // Your OTLP collector
+});
+
+// Enable telemetry in your agent with names for better debugging
+const results = await agent({
+  llm: llmOpenAI({ apiKey: process.env.OPENAI_API_KEY! }),
+  telemetry,
+  name: "data-analyzer",  // Shows in traces and metrics!
+})
+  .then({ 
+    name: "data-analysis",  // Shows as "Step 1: data-analysis" in Jaeger
+    prompt: "Analyze data" 
+  })
+  .then({ 
+    name: "report-generation",
+    prompt: "Generate report" 
+  })
+  .run();
+
+// Traces and metrics automatically sent to your collector!
+```
+
+**That's it!** Volcano auto-configures exporters and starts sending spans and metrics.
+
+### Naming Agents and Steps
+
+Use the optional `name` field to make traces and metrics more meaningful:
+
+**Agent Names:**
+```typescript
+const results = await agent({
+  llm,
+  telemetry,
+  name: 'data-pipeline',        // ✨ Shows in metrics and traces
+  description: 'Analyzes data'  // For agent crews (LLM sees this)
+})
+```
+
+**Step Names:**
+```typescript
+.then({
+  name: 'data-validation',   // ✨ Shows in Jaeger as "Step 1: data-validation"
+  prompt: 'Validate input'
+})
+```
+
+**Benefits:**
+- **Better debugging**: Jaeger shows "Step 1: data-validation" instead of generic "Step 1"
+- **Metrics filtering**: Query by agent name in Grafana (e.g., token usage by agent)
+- **Production monitoring**: Track which agents/steps are slow or failing
+- **Multi-agent visibility**: See parent-child relationships by name
+
+**When to use:**
+- Always use agent `name` when tracking costs or performance by workflow type
+- Use step `name` for complex workflows where you need to debug specific steps
+- Optional in simple one-off scripts
+
+### Advanced: Manual SDK Configuration
+
+For more control, configure the OpenTelemetry SDK yourself:
+
+```typescript
+// app.ts or index.ts - run once at startup
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+
+const sdk = new NodeSDK({
+  serviceName: "my-agent-service",
+  traceExporter: new OTLPTraceExporter({
+    url: "http://localhost:4318/v1/traces",
+    headers: { 'Authorization': `Bearer ${process.env.API_KEY}` }
+  }),
+});
+
+sdk.start();
+
+// Then create telemetry without endpoint (uses global SDK)
+const telemetry = createVolcanoTelemetry({
+  serviceName: "my-agent-service",
+});
+```
+
+Use manual configuration when you need:
+- Custom headers for authentication
+- Multiple exporters
+- Custom resource attributes
+- Fine-grained exporter configuration
+
+### Installation
+
+**For auto-configuration** (using `endpoint` parameter):
+
+```bash
+npm install @opentelemetry/api \
+  @opentelemetry/sdk-node \
+  @opentelemetry/exporter-trace-otlp-http \
+  @opentelemetry/exporter-metrics-otlp-http
+```
+
+**For manual configuration** (advanced):
+
+```bash
+# Choose your specific exporters
+npm install @opentelemetry/exporter-jaeger      # For Jaeger
+npm install @opentelemetry/exporter-prometheus  # For Prometheus
+npm install @opentelemetry/exporter-otlp-grpc   # For gRPC
+```
+
+**Optional Dependency:** If `@opentelemetry/api` is not installed, telemetry becomes a no-op. Your code works normally without observability.
+
+## Comprehensive Metrics
+
+Volcano SDK provides detailed metrics to answer critical questions about your AI agents:
+
+### Questions You Can Answer
+
+**Agent Analytics:**
+- "Which agent is being used the most?" → `volcano_agent_executions_total`
+- "Which agent consumes the most tokens?" → `volcano_agent_tokens_total`  
+- "What are the parent-child agent relationships?" → `volcano_agent_subagent_calls_total`
+- "How many times was agent X called by agent Y?" → Query by parent/child labels
+
+**Token Economics:**
+- "How many tokens am I using per provider?" → `volcano_llm_tokens_total` by provider
+- "Which model uses the most tokens?" → `volcano_llm_tokens_total` by model
+- "What's my input vs output token ratio?" → Compare `input` vs `output` metrics
+- "Which agent is the most expensive to run?" → `volcano_agent_tokens_total` by agent_name
+
+**Performance:**
+- "Which provider is fastest?" → `volcano_llm_duration` p95 by provider
+- "How long do workflows take?" → `volcano_agent_duration` histograms
+- "How many steps per workflow?" → `volcano_workflow_steps`
+
+**Tools:**
+- "Which MCP tool is called most?" → `volcano_mcp_calls_total` by server
+- "Which tool is slowest?" → `volcano_mcp_tool_duration` p95
+
+### Available Metrics
+
+**Core Metrics:**
+- `volcano_agent_duration_ms` - Agent workflow duration (histogram)
+- `volcano_step_duration_ms` - Individual step duration (histogram)
+- `volcano_llm_calls_total` - LLM API calls (counter with provider, model labels)
+- `volcano_mcp_calls_total` - MCP tool calls (counter with server label)
+- `volcano_errors_total` - Errors (counter with error_type label)
+
+**Token Metrics (New in v1.0.3):**
+- `volcano_llm_tokens_input` - Input tokens (counter with provider, model, agent_name)
+- `volcano_llm_tokens_output` - Output tokens (counter with provider, model, agent_name)
+- `volcano_llm_tokens_total` - Total tokens (counter with provider, model, agent_name)
+
+**Agent Metrics (New in v1.0.3):**
+- `volcano_agent_executions_total` - Times each agent executed (counter with agent_name, parent_agent)
+- `volcano_agent_tokens_total` - Tokens consumed by agent (counter with agent_name)
+- `volcano_agent_subagent_calls_total` - Parent→child relationships (counter with parent_agent_name, agent_name)
+
+**Workflow Metrics (New in v1.0.3):**
+- `volcano_workflow_steps` - Steps per workflow (histogram with agent_name)
+
+**All metrics include provider, model, agent_name, and parent_agent labels where applicable for fine-grained filtering.**
+
+### Example Prometheus Queries
+
+**Agent Analytics:**
+```promql
+# Top 10 agents by execution count
+topk(10, sum(volcano_agent_executions_total) by (agent_name))
+
+# Which agent consumes the most tokens?
+topk(10, sum(volcano_agent_tokens_total) by (agent_name))
+
+# Parent-child agent relationships
+sum(volcano_agent_subagent_calls_total) by (parent_agent_name, agent_name)
+```
+
+**Token Economics:**
+```promql
+# Which model uses the most tokens?
+topk(5, sum(volcano_llm_tokens_total) by (model))
+
+# Input vs output token ratio
+sum(volcano_llm_tokens_output_total) / sum(volcano_llm_tokens_input_total)
+
+# Tokens per agent over time
+sum(increase(volcano_agent_tokens_total[1h])) by (agent_name)
+```
+
+**Performance:**
+```promql
+# Which provider is fastest? (p95 latency)
+histogram_quantile(0.95, 
+  sum(volcano_agent_duration_milliseconds_bucket) by (le, provider)
+)
+
+# Average workflow duration
+avg(volcano_agent_duration_milliseconds_sum / volcano_agent_duration_milliseconds_count)
+
+# Workflow complexity distribution
+histogram_quantile(0.95, sum(volcano_workflow_steps_bucket) by (le))
+```
+
+**Tools & Errors:**
+```promql
+# Most-called MCP tools
+topk(10, sum(volcano_mcp_calls_total) by (server))
+
+# Error rate by provider
+sum(volcano_errors_total) by (provider) / sum(volcano_llm_calls_total) by (provider)
+```
+
+## Distributed Tracing
+
+Volcano creates hierarchical traces showing the complete execution flow of your agent workflows.
+
+### Trace Hierarchy
+
+```text
+Trace: agent-run-abc123
+├── Span: agent.run (parent)
+│   │   agent.name: "data-analyzer"
+│   │
+│   ├── Span: Step 1: weather-check
+│   │   │   step.type: mcp_auto
+│   │   │   llm.provider: OpenAI-gpt-4o-mini
+│   │   │   llm.model: gpt-4o-mini
+│   │   │
+│   │   ├── Span: llm.generate (provider: openai, model: gpt-4o-mini)
+│   │   ├── Span: mcp.discover_tools (endpoint: http://...)
+│   │   └── Span: mcp.call_tool (tool: get_weather)
+│   │
+│   ├── Span: Step 2: analyze-data
+│   │   │   step.type: llm
+│   │   │   llm.provider: Anthropic-claude-3-haiku
+│   │   │
+│   │   └── Span: llm.generate (provider: anthropic, model: claude-3-haiku)
+│   │
+│   └── Span: Step 3 (no name provided)
+│       │   step.type: mcp_explicit
+│       │
+│       └── Span: mcp.call_tool (tool: send_notification)
+```
+
+### Span Attributes
+
+Each span includes rich attributes for debugging:
+
+| Span Type                  | Attributes                                                                                  |
+| -------------------------- | ------------------------------------------------------------------------------------------- |
+| **agent.run**              | `agent.name`, `agent.step_count`, `volcano.version`                                         |
+| **Step N** or **Step N: name** | `step.index`, `step.name`, `step.type`, `step.prompt`, `llm.provider`, `llm.model` |
+| **llm.generate**           | `llm.provider`, `llm.model`, `llm.prompt_length`                                            |
+| **mcp.\***                 | `mcp.endpoint`, `mcp.operation`, `mcp.has_auth`                                             |
+
+**New in v1.0.3:**
+- **Agent names**: Identify which agent is running in traces and metrics
+- **Step names**: Spans show as "Step 1: data-analysis" instead of generic "step.execute"
+- **LLM tags in steps**: Every step span includes `llm.provider` and `llm.model` tags
+- **Step prompts**: First 100 characters of the prompt stored as `step.prompt` attribute
+
+### Error Tracking
+
+When errors occur, spans include exception details:
+
+```typescript
+// Errors are automatically recorded in spans
+try {
+  await agent({ llm, telemetry }).then({ prompt: "This might fail" }).run();
+} catch (error) {
+  // Span will have:
+  // - status: ERROR
+  // - exception details
+  // - stack trace
+}
+```
+
+## Metrics
+
+Volcano records metrics for dashboards and alerting.
+
+### Available Metrics
+
+| Metric                    | Type      | Description                                               |
+| ------------------------- | --------- | --------------------------------------------------------- |
+| `volcano.agent.duration`  | Histogram | Total agent execution time (ms)                           |
+| `volcano.step.duration`   | Histogram | Individual step duration (ms), labeled by type            |
+| `volcano.llm.calls.total` | Counter   | Total LLM API calls, labeled by provider and error status |
+| `volcano.mcp.calls.total` | Counter   | Total MCP tool calls                                      |
+| `volcano.errors.total`    | Counter   | Total errors by type and provider                         |
+
+### Metric Labels
+
+Metrics include labels for filtering and grouping:
+
+- `provider` - LLM provider (openai, anthropic, etc.)
+- `model` - Specific model used
+- `type` - Step type (llm, mcp_auto, mcp_explicit)
+- `error` - Boolean indicating success/failure
+
+## Observability Backends
+
+Volcano works with any OpenTelemetry-compatible backend.
+
+### Jaeger (Distributed Tracing)
+
+```typescript
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import { JaegerExporter } from "@opentelemetry/exporter-jaeger";
+import { createVolcanoTelemetry } from "volcano-sdk";
+
+// Setup OTEL SDK
+const sdk = new NodeSDK({
+  serviceName: "my-agent",
+  traceExporter: new JaegerExporter({
+    endpoint: "http://localhost:14268/api/traces",
+  }),
+});
+
+sdk.start();
+
+// Use with Volcano
+const telemetry = createVolcanoTelemetry({
+  serviceName: "my-agent",
+});
+
+await agent({ llm, telemetry }).then({ prompt: "..." }).run();
+
+// View traces in Jaeger UI at http://localhost:16686
+```
+
+### Prometheus (Metrics)
+
+```typescript
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import { PrometheusExporter } from "@opentelemetry/exporter-prometheus";
+
+const prometheusExporter = new PrometheusExporter({
+  port: 9464,
+});
+
+const sdk = new NodeSDK({
+  serviceName: "my-agent",
+  metricReader: prometheusExporter,
+});
+
+sdk.start();
+
+// Metrics available at http://localhost:9464/metrics
+// volcano_agent_duration_bucket{le="100"} 42
+// volcano_llm_calls_total{provider="openai"} 156
+```
+
+### DataDog / NewRelic / Grafana Cloud
+
+**Option 1: Auto-configuration with endpoint**
+
+```typescript
+import { createVolcanoTelemetry } from "volcano-sdk";
+
+const telemetry = createVolcanoTelemetry({
+  serviceName: "my-agent",
+  endpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+});
+
+// Set these environment variables:
+// OTEL_EXPORTER_OTLP_ENDPOINT="https://your-backend.com"
+// OTEL_EXPORTER_OTLP_HEADERS="DD-API-KEY=your-key" (for DataDog)
+```
+
+**Option 2: Manual SDK configuration** (for custom headers, etc.)
+
+```typescript
+import { OTLPTraceExporter } from "@opentelemetry/exporter-otlp-http";
+import { NodeSDK } from "@opentelemetry/sdk-node";
+
+const sdk = new NodeSDK({
+  serviceName: "my-agent",
+  traceExporter: new OTLPTraceExporter({
+    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+    headers: {
+      "DD-API-KEY": process.env.DD_API_KEY, // DataDog
+      // or 'X-License-Key': process.env.NEW_RELIC_KEY
+      // or 'Authorization': `Bearer ${process.env.GRAFANA_TOKEN}`
+    },
+  }),
+});
+
+sdk.start();
+
+// Then create telemetry without endpoint
+const telemetry = createVolcanoTelemetry({
+  serviceName: "my-agent",
+});
+```
+
+### Environment Variables
+
+OTEL supports standard environment variables for configuration:
+
+```bash
+# OTLP endpoint (your observability backend)
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+
+# Service name
+export OTEL_SERVICE_NAME="my-agent"
+
+# Headers (API keys, etc.)
+export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer your-api-key"
+
+# Traces only, metrics only, or both
+export OTEL_TRACES_EXPORTER="otlp"
+export OTEL_METRICS_EXPORTER="otlp"
+```
+
+## Advanced Configuration
+
+### Custom Tracer and Meter
+
+Provide your own OTEL tracer and meter instances:
+
+```typescript
+import { trace, metrics } from "@opentelemetry/api";
+import { createVolcanoTelemetry } from "volcano-sdk";
+
+const tracer = trace.getTracer("my-custom-tracer");
+const meter = metrics.getMeter("my-custom-meter");
+
+const telemetry = createVolcanoTelemetry({
+  serviceName: "my-agent",
+  tracer,
+  meter,
+});
+```
+
+### Disable Traces or Metrics
+
+```typescript
+// Only traces, no metrics
+const telemetry = createVolcanoTelemetry({
+  serviceName: "my-agent",
+  traces: true,
+  metrics: false,
+});
+
+// Only metrics, no traces
+const telemetry = createVolcanoTelemetry({
+  serviceName: "my-agent",
+  traces: false,
+  metrics: true,
+});
+```
+
+## Best Practices
+
+- **Production only:** Enable telemetry in production, disable in development for faster iteration
+- **Sampling:** Use OTEL sampling for high-traffic applications to reduce costs
+- **Service naming:** Use descriptive service names for easier filtering
+- **Label cardinality:** Be mindful of high-cardinality labels (user IDs, etc.)
+- **Monitor costs:** Observability backends charge by data volume - sample appropriately
+
+**Performance:** Telemetry adds minimal overhead (~1-5ms per workflow) but can increase network traffic to your observability backend. Use sampling for high-throughput applications.

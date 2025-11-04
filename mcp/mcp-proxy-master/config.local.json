@@ -1,0 +1,28 @@
+{
+  "mcpProxy": {
+    "baseURL": "http://localhost:9090",
+    "addr": ":9090",
+    "name": "local-mcp-proxy",
+    "version": "0.1.0",
+    "type": "streamable-http",
+    "options": {
+      "logEnabled": true,
+      "authTokens": []
+    }
+  },
+  "mcpServers": {
+    "lootbox": {
+      "command": "node",
+      "args": [
+        "/host/LootboxMcpAdapter.cjs"
+      ],
+      "env": {
+        "MCP_LOOTBOX_URL": "http://host.docker.internal:3005",
+        "LOOTBOX_URL": "http://host.docker.internal:3005"
+      },
+      "options": {
+        "logEnabled": true
+      }
+    }
+  }
+}

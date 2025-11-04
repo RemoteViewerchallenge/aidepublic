@@ -1,0 +1,10 @@
+{
+  "name": "lootbox",
+  "transport": "stdio",
+  "command": "node",
+  "args": ["/host/LootboxMcpAdapter.cjs"],
+  "env": {
+    "LOOTBOX_URL": "http://localhost:3005"
+  },
+  "description": "Lootbox RPC server adapter for MCP"
+}

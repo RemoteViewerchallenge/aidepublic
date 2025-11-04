@@ -1,0 +1,35 @@
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "@tanstack/react-query": "^5.90.6",
+    "@trpc/client": "^11.7.1",
+    "@trpc/react-query": "^11.7.1",
+    "@trpc/server": "^11.7.1",
+    "@xterm/addon-fit": "^0.10.0",
+    "classnames": "^2.3.2",
+    "critters": "^0.0.23",
+    "gridstack": "^12.3.3",
+    "monaco-editor": "^0.54.0",
+    "next": "^15.2.4",
+    "openai": "^6.7.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "xterm": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^17.0.12",
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.2",
+    "eslint-config-custom": "*",
+    "typescript": "^5.5.4"
+  }
+}

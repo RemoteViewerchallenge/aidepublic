@@ -6,15 +6,15 @@ services:
     image: postgres:17
     container_name: mcpjungle-db
     environment:
-      POSTGRES_USER: mcpjungle
-      POSTGRES_PASSWORD: mcpjungle
-      POSTGRES_DB: mcpjungle
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: aico_db
     ports:
-      - "5433:5432"
+      - '5433:5432'
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "PGPASSWORD=mcpjungle pg_isready -U mcpjungle"]
+      test: ['CMD-SHELL', 'PGPASSWORD=password pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,14 +24,14 @@ services:
     image: mcpjungle/mcpjungle:${MCPJUNGLE_IMAGE_TAG:-latest-stdio}
     container_name: mcpjungle-server
     environment:
-      DATABASE_URL: postgres://mcpjungle:mcpjungle@db:5432/mcpjungle
+      DATABASE_URL: postgres://postgres:password@db:5432/aico_db
       SERVER_MODE: ${SERVER_MODE:-development}
       OTEL_ENABLED: ${OTEL_ENABLED:-false}
     ports:
-      - "${HOST_PORT:-8080}:8080"
+      - '${HOST_PORT:-8080}:8080'
     volumes:
       # Mount host filesystem current directory to enable filesystem MCP server access
-      - .:/host:ro
+      - .:/host:rw,z
       # Other options:
       # - ${HOME}:/host/home:ro
       # - /tmp:/host/tmp:rw

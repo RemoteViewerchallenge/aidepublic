@@ -1,0 +1,10 @@
+{
+  "name": "lootbox",
+  "description": "Lootbox code execution server with filesystem, key-value, memory, SQLite, and GraphQL capabilities",
+  "transport": "stdio",
+  "command": "node",
+  "args": ["src/core/LootboxMcpAdapter.ts"],
+  "env": {
+    "LOOTBOX_URL": "http://localhost:3005"
+  }
+}
