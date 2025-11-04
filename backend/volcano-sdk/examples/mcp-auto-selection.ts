@@ -7,13 +7,15 @@
 // - Multi-step workflow with context preservation
 // - Proper cleanup on exit
 
-import express from 'express';
-import cors from 'cors';
 import { randomUUID } from 'node:crypto';
-import { z } from 'zod';
+
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
+import cors from 'cors';
+import express from 'express';
+import { z } from 'zod';
+
 import { agent, llmOpenAI, mcp, createVolcanoTelemetry } from "../dist/volcano-sdk.js";
 
 // ============================================================================

@@ -1,6 +1,6 @@
 import { MDXProvider } from "@mdx-js/react";
-import type { ReactNode } from "react";
 import { Highlight, themes } from "prism-react-renderer";
+import type { ReactNode } from "react";
 
 interface CodeProps {
   children?: ReactNode;

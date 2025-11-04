@@ -1,5 +1,6 @@
 import 'dotenv/config';
-import pool from '../db/index.js';
+
+import pool from '../../../db/index.js';
 
 async function cleanupOpenRouterModels() {
   let client;

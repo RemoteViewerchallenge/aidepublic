@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { OpenRouterAdapter } from './OpenRouterAdapter.js';
+
+import type { Model } from '../types/provider.js';
 import { getEnv } from '../utils/env.js';
-import { Model } from '../types/provider.js';
+
+import { OpenRouterAdapter } from './OpenRouterAdapter.js';
 
 // This test makes real API calls and will be skipped if the API key is not provided.
 const API_KEY = getEnv('OPENROUTER_API_KEY');

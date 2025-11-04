@@ -1,9 +1,11 @@
 import { useLocation } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
-import { buildNavigation } from "./build-navigation";
-import { SidebarItem } from "./sidebar-item";
+
 import { SearchInput } from "@/components/search/search-input";
 import { scrollToDocElement, scrollToDocTop } from "@/lib/scroll-utils";
+
+import { buildNavigation } from "./build-navigation";
+import { SidebarItem } from "./sidebar-item";
 
 const navigation = buildNavigation();
 

@@ -10,8 +10,9 @@ import {
   Split,
 } from "lucide-react";
 import { Highlight } from "prism-react-renderer";
-import { customThemeDark } from "./code-theme";
 import { useState, useEffect, useRef } from "react";
+
+import { customThemeDark } from "./code-theme";
 
 const codeExample = `import { agent, llmOpenAI, llmAnthropic, llmMistral } from "volcano-sdk";
 

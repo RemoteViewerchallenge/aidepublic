@@ -1,4 +1,4 @@
-import { ProviderId } from '../types/provider';
+import type { ProviderId } from '../types/provider';
 
 /**
  * A base error for issues related to a specific provider.

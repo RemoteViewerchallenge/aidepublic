@@ -1,6 +1,7 @@
+import { Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Search } from "lucide-react";
+
 import { SearchModal } from "./search-modal";
 
 export function SearchInput() {

@@ -1,5 +1,5 @@
-import pool from '../db/index';
-import { Model, ProviderId } from '../types/provider';
+import pool from '../../../db/index.js';
+import type { Model, ProviderId } from '../types/provider';
 
 interface ModelCriteria {
   minContext?: number;
@@ -312,5 +312,67 @@ export class ModelSelector {
         client.release();
       }
     }
+  }
+
+  // Backwards compatibility: support legacy selectBestModel(models, task) and new selectBestModel(criteria, options)
+  async selectBestModel(first: any, second?: any): Promise<Model | null> {
+    // Old signature: selectBestModel(models: any[], task: string)
+    if (Array.isArray(first)) {
+      const models = first as any[];
+      // Normalize and choose the best free model with the largest context window
+      const normalizeProvider = (value: unknown): string =>
+        String(value || '').toLowerCase();
+
+      const determineIsFree = (row: any): boolean => {
+        const provider = normalizeProvider(row.provider ?? row.api_provider);
+        if (provider === 'aistudio') return true;
+        if (provider === 'openrouter') {
+          const pricing = (row.raw_data && row.raw_data.pricing) || {};
+          const allPricesZero = Object.values(pricing).every((v: any) => {
+            if (typeof v === 'string') return Number.parseFloat(v) === 0;
+            if (typeof v === 'number') return v === 0;
+            return false;
+          });
+          return (
+            allPricesZero ||
+            (typeof row.id === 'string' &&
+              row.id.toLowerCase().includes(':free'))
+          );
+        }
+        return false;
+      };
+
+      let candidates = models.slice();
+      if (candidates.length === 0) return null;
+      // Prefer free models, then larger context, then name
+      candidates.sort((a, b) => {
+        const aFree = determineIsFree(a) ? 1 : 0;
+        const bFree = determineIsFree(b) ? 1 : 0;
+        if (aFree !== bFree) return bFree - aFree;
+        const aCtx = Number.isFinite(a.context_length) ? a.context_length : 0;
+        const bCtx = Number.isFinite(b.context_length) ? b.context_length : 0;
+        if (aCtx !== bCtx) return bCtx - aCtx;
+        const aName = (a.name || a.id || '').toString();
+        const bName = (b.name || b.id || '').toString();
+        return aName.localeCompare(bName);
+      });
+
+      const pick = candidates[0];
+      return {
+        id: pick.id,
+        name: pick.name,
+        apiProvider: normalizeProvider(pick.provider ?? pick.api_provider),
+        sourceProvider: normalizeProvider(pick.provider ?? pick.api_provider),
+        contextWindow: pick.context_length,
+        supportsToolUse: Boolean(pick.tool_calling),
+        isFree: determineIsFree(pick),
+      };
+    }
+
+    // New signature: delegate to selectModel(criteria, options)
+    return this.selectModel(
+      first as ModelCriteria,
+      (second as SelectModelOptions) || {}
+    );
   }
 }

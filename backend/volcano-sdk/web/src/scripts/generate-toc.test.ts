@@ -1,8 +1,10 @@
-import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
-import matter from "gray-matter";
 import { fileURLToPath } from "url";
+
+import matter from "gray-matter";
+import { describe, it, expect } from "vitest";
+
 import { extractHeadings, type Heading } from "./generate-toc";
 
 const __filename = fileURLToPath(import.meta.url);

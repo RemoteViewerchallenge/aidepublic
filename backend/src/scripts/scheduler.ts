@@ -1,6 +1,8 @@
 import 'dotenv/config';
-import cron from 'node-cron';
+
 import { spawn } from 'child_process';
+
+import cron from 'node-cron';
 
 // Schedule to run every 12 hours
 cron.schedule('0 */12 * * *', () => {

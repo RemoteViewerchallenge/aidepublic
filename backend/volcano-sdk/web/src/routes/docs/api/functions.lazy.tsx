@@ -1,7 +1,8 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
+
 import { DocsLayout } from "@/components/docs/docs-layout";
-import { SEOHead } from "@/seo/seo-head";
 import { CodeBlock, InlineCode } from "@/components/ui/code-block";
+import { SEOHead } from "@/seo/seo-head";
 
 export const Route = createLazyFileRoute("/docs/api/functions")({
   component: ApiFunctionsPage,

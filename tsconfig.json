@@ -1,33 +1,29 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    /* Type Checking */
-    "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-
-    /* Modules */
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-
-    /* Emit */
     "outDir": "./dist",
-    "sourceMap": true,
-
-    /* Language and Environment */
-    "target": "ES2022",
-    "lib": ["ES2022", "dom"],
-
-    /* JSX */
-    "jsx": "preserve",
-    "incremental": true,
-
-    /* Other */
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  }
+    "incremental": true
+  },
+  "include": [
+    "backend/src/**/*",
+    "backend/volcano-sdk/**/*",
+    "backend/volcano-sdk/tests/**/*",
+    "db/**/*",
+    "src/**/*",
+    "test/**/*",
+    "*.ts",
+    "*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "frontend/my-app",
+    "**/node_modules",
+    "**/dist"
+  ]
 }

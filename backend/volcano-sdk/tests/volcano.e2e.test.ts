@@ -1,7 +1,12 @@
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
+import { afterAll, beforeAll, describe, expect, it , describe as d2, it as it2, expect as e2 } from 'vitest';
+
 import { agent, mcp } from '../dist/volcano-sdk.js';
+
+// Run with: npx vitest run -t "default LLM"
+
 
 function waitForOutput(proc: any, match: RegExp, timeoutMs = 8000) {
   return new Promise<void>((resolve, reject) => {
@@ -81,10 +86,6 @@ describe('volcano-sdk e2e with mock MCP servers', () => {
     expect(typeof second.mcp?.result).toBe('object');
   }, 20000);
 });
-
-// Run with: npx vitest run -t "default LLM"
-
-import { describe as d2, it as it2, expect as e2 } from "vitest";
 
 d2("agent default LLM", () => {
   it2("uses default LLM when step.llm is omitted", async () => {

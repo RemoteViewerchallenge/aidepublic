@@ -13,8 +13,10 @@
 // have access to the environment variables from the .env file.
 import 'dotenv/config';
  
+import type { Server } from 'http';
+
 import logger from '../utils/logger.js';
-import { Server } from 'http';
+
 import { createServer } from './server.js';
 
 const app = createServer();

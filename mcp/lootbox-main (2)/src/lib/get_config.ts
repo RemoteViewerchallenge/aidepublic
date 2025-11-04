@@ -1,12 +1,12 @@
-import { parseArgs } from "@std/cli";
-import { exists } from "https://deno.land/std@0.208.0/fs/mod.ts";
-import type { Config, McpServerConfig } from "./lootbox-cli/types.ts";
+import { parseArgs } from '@std/cli';
+import { exists } from '@std/fs';
+import type { Config, McpServerConfig } from './lootbox-cli/types.ts';
 import {
   getUserLootboxToolsDir,
   getUserLootboxWorkflowsDir,
-  getUserLootboxScriptsDir
-} from "./paths.ts";
-import { join, dirname } from "https://deno.land/std@0.208.0/path/mod.ts";
+  getUserLootboxScriptsDir,
+} from './paths.ts';
+import { join, dirname } from 'https://deno.land/std@0.208.0/path/mod.ts';
 
 interface ResolvedConfig {
   lootbox_root: string;
@@ -20,7 +20,7 @@ interface ResolvedConfig {
 
 async function loadConfig(): Promise<Config> {
   try {
-    const configText = await Deno.readTextFile("lootbox.config.json");
+    const configText = await Deno.readTextFile('lootbox.config.json');
     return JSON.parse(configText);
   } catch {
     return {};
@@ -29,11 +29,11 @@ async function loadConfig(): Promise<Config> {
 
 export const get_config = async (): Promise<ResolvedConfig> => {
   const args = parseArgs(Deno.args, {
-    string: ["lootbox-root", "port", "lootbox-data-dir"],
+    string: ['lootbox-root', 'port', 'lootbox-data-dir'],
     alias: {
-      "lootbox-root": "r",
-      port: "p",
-      "lootbox-data-dir": "d",
+      'lootbox-root': 'r',
+      port: 'p',
+      'lootbox-data-dir': 'd',
     },
   });
 
@@ -46,9 +46,9 @@ export const get_config = async (): Promise<ResolvedConfig> => {
   let workflowsDir: string;
   let scriptsDir: string;
 
-  if (args["lootbox-root"] as string) {
+  if (args['lootbox-root'] as string) {
     // Explicit flag takes priority
-    lootboxRoot = args["lootbox-root"] as string;
+    lootboxRoot = args['lootbox-root'] as string;
     toolsDir = `${lootboxRoot}/tools`;
     workflowsDir = `${lootboxRoot}/workflows`;
     scriptsDir = `${lootboxRoot}/scripts`;
@@ -60,9 +60,9 @@ export const get_config = async (): Promise<ResolvedConfig> => {
     scriptsDir = `${lootboxRoot}/scripts`;
   } else {
     // Check local .lootbox/tools first
-    const localToolsDir = ".lootbox/tools";
+    const localToolsDir = '.lootbox/tools';
     if (await exists(localToolsDir)) {
-      lootboxRoot = ".lootbox";
+      lootboxRoot = '.lootbox';
       toolsDir = localToolsDir;
       workflowsDir = `${lootboxRoot}/workflows`;
       scriptsDir = `${lootboxRoot}/scripts`;
@@ -76,24 +76,26 @@ export const get_config = async (): Promise<ResolvedConfig> => {
         scriptsDir = getUserLootboxScriptsDir();
       } else {
         // Neither exists - show error and exit
-        console.error("\n❌ No lootbox directory found!");
-        console.error("\nLooked in:");
+        console.error('\n❌ No lootbox directory found!');
+        console.error('\nLooked in:');
         console.error(`  • ${localToolsDir}`);
         console.error(`  • ${homeToolsDir}`);
-        console.error("\n💡 Run 'lootbox init' to create a new lootbox project.\n");
+        console.error(
+          "\n💡 Run 'lootbox init' to create a new lootbox project.\n"
+        );
         Deno.exit(1);
       }
     }
   }
 
-  const portStr = (args.port as string) || config.port?.toString() || "3000";
+  const portStr = (args.port as string) || config.port?.toString() || '3000';
   const lootboxDataDir =
-    (args["lootbox-data-dir"] as string) || config.lootboxDataDir || null;
+    (args['lootbox-data-dir'] as string) || config.lootboxDataDir || null;
   const mcpServers = config.mcpServers || null;
 
   const port = parseInt(portStr, 10);
   if (isNaN(port)) {
-    console.error("Error: --port must be a valid number");
+    console.error('Error: --port must be a valid number');
     Deno.exit(1);
   }
 

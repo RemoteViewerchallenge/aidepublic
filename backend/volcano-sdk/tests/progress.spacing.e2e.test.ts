@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
+
 import { agent, llmOpenAI } from '../src/volcano-sdk.js';
+
 import { renderAnsi } from './progress.renderer.test.js';
 
 describe('Progress spacing and clearing (e2e)', () => {

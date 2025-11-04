@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { mcp } from '../src/volcano-sdk.js';
 import { createHash } from 'node:crypto';
+
+import { describe, it, expect } from 'vitest';
+
+import { mcp } from '../src/volcano-sdk.js';
 
 describe('MCP Tool Name Length Validation', () => {
   describe('MCP ID hashing', () => {

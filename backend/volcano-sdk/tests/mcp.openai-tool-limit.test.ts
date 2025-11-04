@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { mcp, discoverTools, __internal_primeDiscoveryCache } from '../src/volcano-sdk.js';
 
 describe('OpenAI 64-Character Tool Name Limit', () => {

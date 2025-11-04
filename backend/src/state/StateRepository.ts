@@ -1,7 +1,8 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+
 import { StateReadError } from '../core/customErrors';
-import { HealthStatus, ProviderId } from '../types/provider';
+import type { HealthStatus, ProviderId } from '../types/provider';
 
 /**
  * @file This module's only job is to safely read and write data to the filesystem.

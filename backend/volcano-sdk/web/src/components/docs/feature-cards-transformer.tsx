@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
+
 import { FeatureCard } from "@/components/ui/feature-card";
 
 // Map feature titles to their corresponding docs pages

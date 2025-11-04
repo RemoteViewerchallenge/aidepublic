@@ -11,7 +11,7 @@
  * - `interface ProviderAdapter`: The core contract with methods like `checkHealth()`, `fetchAvailableModels()`, and `executeChatCompletion()`.
  */
 
-import {
+import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
   Model,

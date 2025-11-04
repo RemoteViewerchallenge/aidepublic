@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { llmAzure } from '../../dist/volcano-sdk.js';
 
 describe('Azure AI provider (integration)', () => {

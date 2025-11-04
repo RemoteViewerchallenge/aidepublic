@@ -11,8 +11,9 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
+
 import { ProviderError } from '../core/customErrors';
-import {
+import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
   Model,
@@ -20,7 +21,8 @@ import {
 } from '../types/provider';
 import { getEnv } from '../utils/env';
 import { createModuleLogger } from '../utils/logger';
-import { ProviderAdapter } from './BaseProviderAdapter';
+
+import type { ProviderAdapter } from './BaseProviderAdapter';
 
 const logger = createModuleLogger('GeminiAdapter');
 

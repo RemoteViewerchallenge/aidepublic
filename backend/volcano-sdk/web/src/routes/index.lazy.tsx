@@ -1,13 +1,13 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
 
+import Demo1 from "@/components/landing/demo1";
+import Demo2 from "@/components/landing/demo2";
+import Features from "@/components/landing/features";
+import { Footer } from "@/components/landing/footer";
+import { GitHubCTA } from "@/components/landing/github-cta";
 import { Header } from "@/components/landing/header";
 import { Hero } from "@/components/landing/hero";
 import { Statistics } from "@/components/landing/statistics";
-import { GitHubCTA } from "@/components/landing/github-cta";
-import { Footer } from "@/components/landing/footer";
-import Features from "@/components/landing/features";
-import Demo1 from "@/components/landing/demo1";
-import Demo2 from "@/components/landing/demo2";
 
 import { SEOHead } from "../seo/seo-head";
 

@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { Model } from '../types/provider.js';
+
+import type { Model } from '../types/provider.js';
 import { getEnv } from '../utils/env.js';
+
 import { AIStudioAdapter } from './AIStudioAdapter.js';
 
 describe('AIStudioAdapter (Integration)', () => {

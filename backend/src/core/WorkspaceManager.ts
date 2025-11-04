@@ -15,7 +15,7 @@
  * - `writeFile(workspaceId: string, filePath: string, content: string): Promise<void>`
  */
 
-import { StateRepository } from '../state/StateRepository.js';
+import type { StateRepository } from '../state/StateRepository.js';
 
 export class WorkspaceManager {
   private stateRepository: StateRepository;

@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { spawn } from 'node:child_process';
+
 import { Client as MCPClient } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
 function waitForOutput(proc: any, match: RegExp, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {

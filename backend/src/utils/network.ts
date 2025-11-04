@@ -6,8 +6,6 @@
 import {
   GoogleGenerativeAIError,
   GoogleGenerativeAIFetchError,
-  GoogleGenerativeAIRequestInputError,
-  GoogleGenerativeAIAbortError,
 } from '@google/generative-ai';
 
 /**
@@ -23,18 +21,18 @@ export async function makeRequest(
   let response: Response;
   try {
     response = await fetch(url, fetchOptions);
-  } catch (e: any) {
-    let err = e;
+  } catch (_e: any) {
+    let err = _e;
     if (err.name === 'AbortError') {
-      err = new GoogleGenerativeAIAbortError(
-        `Request aborted when fetching ${url}: ${e.message}`
+      err = new GoogleGenerativeAIError(
+        `Request aborted when fetching ${url}: ${_e.message}`
       );
     } else {
       err = new GoogleGenerativeAIError(
-        `Error fetching from ${url}: ${e.message}`
+        `Error fetching from ${url}: ${_e.message}`
       );
     }
-    err.stack = e.stack;
+    err.stack = _e.stack;
     throw err;
   }
 
@@ -48,7 +46,7 @@ export async function makeRequest(
         message += ` ${JSON.stringify(json.error.details)}`;
         errorDetails = json.error.details;
       }
-    } catch (e) {
+    } catch (_e) {
       // ignored
     }
     throw new GoogleGenerativeAIFetchError(

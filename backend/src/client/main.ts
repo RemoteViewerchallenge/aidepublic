@@ -2,18 +2,18 @@ import * as monaco from 'monaco-editor';
 import { MonacoLanguageClient } from 'monaco-languageclient';
 import { ErrorAction } from 'vscode-languageclient';
 import {
+  _BrowserMessageReader,
+  _BrowserMessageWriter,
+} from 'vscode-languageserver-protocol/browser';
+import {
   toSocket,
   WebSocketMessageReader,
   WebSocketMessageWriter,
 } from 'vscode-ws-jsonrpc';
-import {
-  BrowserMessageReader,
-  BrowserMessageWriter,
-} from 'vscode-languageserver-protocol/browser';
 
 const root = document.getElementById('root')!;
 
-const editor = monaco.editor.create(root, {
+monaco.editor.create(root, {
   theme: 'vs-dark',
   automaticLayout: true,
 });

@@ -1,35 +1,101 @@
+/* Type declarations for Deno sqlite module to satisfy TypeScript when remote types are unavailable */
+declare module 'https://deno.land/x/sqlite/mod.ts' {
+  export class DB {
+    constructor(path?: string | Uint8Array);
+    query(sql: string, ...args: any[]): any;
+    close(): void;
+  }
+}
+
 // Shared database utilities for lootbox SQLite database
 // Provides centralized connection management and schema initialization
 
-import { DB } from "https://deno.land/x/sqlite/mod.ts";
-import { join } from "jsr:@std/path";
+import { DB } from 'https://deno.land/x/sqlite/mod.ts';
+import { join } from 'jsr:@std/path';
+
+// Provide small runtime-agnostic helpers so TypeScript doesn't error on the Deno global.
+// Use Deno when available, otherwise fall back to Node.js equivalents.
+const deno = (globalThis as any).Deno;
+
+function getPlatform(): string {
+  if (deno && deno.build && deno.build.os) {
+    return deno.build.os;
+  }
+  if (typeof process !== 'undefined') {
+    const p = process.platform;
+    if (p === 'win32') return 'windows';
+    if (p === 'darwin') return 'darwin';
+    return 'linux';
+  }
+  return 'linux';
+}
+
+function getEnv(name: string): string | undefined {
+  if (deno && deno.env && typeof deno.env.get === 'function') {
+    return deno.env.get(name);
+  }
+  if (typeof process !== 'undefined' && process.env) {
+    return (process.env as Record<string, string | undefined>)[name];
+  }
+  return undefined;
+}
+
+function getCwd(): string {
+  if (deno && typeof deno.cwd === 'function') {
+    return deno.cwd();
+  }
+  if (typeof process !== 'undefined' && typeof process.cwd === 'function') {
+    return process.cwd();
+  }
+  return '.';
+}
+
+async function mkdirRecursive(path: string): Promise<void> {
+  if (deno && typeof deno.mkdir === 'function') {
+    try {
+      await deno.mkdir(path, { recursive: true });
+    } catch (error) {
+      if (
+        !(deno && deno.errors && error instanceof deno.errors.AlreadyExists)
+      ) {
+        throw error;
+      }
+    }
+  } else {
+    // Node.js fallback
+    const { mkdir } = await import('node:fs/promises');
+    try {
+      await mkdir(path, { recursive: true });
+    } catch {
+      // ignore errors for existing directories
+    }
+  }
+}
 
 /**
  * Get platform-specific data directory following XDG Base Directory spec
  */
 function getDefaultDataDir(): string {
-  const platform = Deno.build.os;
+  const platform = getPlatform();
 
-  if (platform === "windows") {
-    const appData = Deno.env.get("APPDATA") || Deno.env.get("USERPROFILE");
-    return appData
-      ? join(appData, "lootbox")
-      : join(Deno.cwd(), "lootbox-data");
-  } else if (platform === "darwin") {
-    const home = Deno.env.get("HOME");
+  if (platform === 'windows') {
+    const appData = getEnv('APPDATA') || getEnv('USERPROFILE');
+    return appData ? join(appData, 'lootbox') : join(getCwd(), 'lootbox-data');
+  } else if (platform === 'darwin') {
+    const home = getEnv('HOME');
     return home
-      ? join(home, "Library", "Application Support", "lootbox")
-      : join(Deno.cwd(), "lootbox-data");
+      ? join(home, 'Library', 'Application Support', 'lootbox')
+      : join(getCwd(), 'lootbox-data');
   } else {
     // Linux/Unix - follow XDG spec
-    const xdgDataHome = Deno.env.get("XDG_DATA_HOME");
-    const home = Deno.env.get("HOME");
+    const xdgDataHome = getEnv('XDG_DATA_HOME');
+    const home = getEnv('HOME');
     if (xdgDataHome) {
-      return join(xdgDataHome, "lootbox");
+      return join(xdgDataHome, 'lootbox');
     } else if (home) {
-      return join(home, ".local", "share", "lootbox");
+      return join(home, '.local', 'share', 'lootbox');
     }
-    return join(Deno.cwd(), "lootbox-data");
+    return join(getCwd(), 'lootbox-data');
   }
 }
 
@@ -37,24 +103,18 @@ function getDefaultDataDir(): string {
  * Get the database file path
  */
 async function getDbPath(): Promise<string> {
-  const { get_config } = await import("./get_config.ts");
+  const { get_config } = await import('./get_config.ts');
   const config = await get_config();
   const baseDir = config.lootbox_data_dir || getDefaultDataDir();
-  return join(baseDir, "lootbox.db");
+  return join(baseDir, 'lootbox.db');
 }
 
 /**
  * Ensure the database directory exists
  */
 async function ensureDbDir(dbPath: string): Promise<void> {
-  const dir = dbPath.substring(0, dbPath.lastIndexOf("/"));
-  try {
-    await Deno.mkdir(dir, { recursive: true });
-  } catch (error) {
-    if (!(error instanceof Deno.errors.AlreadyExists)) {
-      throw error;
-    }
-  }
+  const dir = dbPath.substring(0, dbPath.lastIndexOf('/'));
+  await mkdirRecursive(dir);
 }
 
 let dbInstance: DB | null = null;

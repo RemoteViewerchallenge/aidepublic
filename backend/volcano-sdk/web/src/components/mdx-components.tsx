@@ -1,6 +1,7 @@
-import { CodeBlock, InlineCode } from "./ui/code-block";
-import { Callout } from "./ui/callout";
 import type { ReactNode, ReactElement } from "react";
+
+import { Callout } from "./ui/callout";
+import { CodeBlock, InlineCode } from "./ui/code-block";
 
 // Type for MDX directive components
 interface DirectiveProps {

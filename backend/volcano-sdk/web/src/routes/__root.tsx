@@ -1,9 +1,11 @@
 import { Outlet, createRootRoute } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect } from "react";
-import { SEOProvider } from "../seo/seo-provider";
+
 import { ThemeProvider } from "@/components/theme-provider";
-import { initializeAnalytics } from "@/lib/analytics";
 import { usePageTracking } from "@/hooks/use-analytics";
+import { initializeAnalytics } from "@/lib/analytics";
+
+import { SEOProvider } from "../seo/seo-provider";
 
 const TanStackRouterDevtools = import.meta.env.PROD
   ? () => null

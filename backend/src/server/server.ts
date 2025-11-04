@@ -5,10 +5,12 @@
  * in our tests without starting the server immediately. This follows best
  * practices for creating testable Node.js applications.
  */
-import express from 'express';
 import * as trpcExpress from '@trpc/server/adapters/express';
-import { appRouter } from './router.js';
 import cors from 'cors';
+import express from 'express';
+
+import { appRouter } from './router.js';
+
 
 export function createServer() {
   const app = express();

@@ -28,8 +28,9 @@
  */
 
 import { createModuleLogger } from '../utils/logger';
-import { ModelSelector } from './ModelSelector';
-import { ProviderManager } from './ProviderManager';
+
+import type { ModelSelector } from './ModelSelector';
+import type { ProviderManager } from './ProviderManager';
 
 const logger = createModuleLogger('ArbitrageEngineAdapter');
 

@@ -1,27 +1,46 @@
-import { WebSocketServer, WebSocket } from 'ws';
-import { Connection, TextDocuments } from 'vscode-languageserver';
+import type {
+  InitializeParams,
+  InitializeResult} from 'vscode-languageserver/node';
 import {
-  WebSocketMessageReader,
-  WebSocketMessageWriter,
   createConnection,
-} from 'vscode-ws-jsonrpc';
+  ProposedFeatures,
+  TextDocuments,
+  TextDocumentSyncKind,
+} from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import type { WebSocket} from 'ws';
+import { WebSocketServer } from 'ws';
 
-const wss = new WebSocketServer({ port: 3000, path: '/sampleServer' });
-
-wss.on('connection', (ws: WebSocket) => {
-  const reader = new WebSocketMessageReader(ws);
-  const writer = new WebSocketMessageWriter(ws);
-  const connection = createConnection(reader, writer, () => {});
+// Create connection handler
+function createLanguageServer(socket: WebSocket) {
+  const connection = createConnection(ProposedFeatures.all);
   const documents = new TextDocuments(TextDocument);
 
+  connection.onInitialize((_params: InitializeParams): InitializeResult => {
+    return {
+      capabilities: {
+        textDocumentSync: TextDocumentSyncKind.Full,
+      },
+    };
+  });
+
+  // Listen on the documents
   documents.listen(connection);
 
-  connection.onInitialize(() => ({
-    capabilities: {
-      textDocumentSync: 1, // Full sync
-    },
-  }));
+  // Setup WebSocket message handling
+  socket.on('message', (data: Buffer) => {
+    const message = data.toString();
+    connection.sendNotification('custom/message', message);
+  });
 
+  // Start listening
   connection.listen();
+}
+
+// Create WebSocket server
+const wss = new WebSocketServer({ port: 3000, path: '/sampleServer' });
+
+wss.on('connection', (socket: WebSocket) => {
+  console.log('Client connected to language server');
+  createLanguageServer(socket);
 });

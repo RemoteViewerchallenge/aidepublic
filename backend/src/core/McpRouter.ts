@@ -1,6 +1,8 @@
-import { spawn, ChildProcess } from 'child_process';
+import type { ChildProcess } from 'child_process';
+import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+
 import { mcp } from 'volcano-sdk';
 
 interface McpConfig {

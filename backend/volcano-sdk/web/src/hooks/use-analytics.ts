@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
 import { useRouter } from '@tanstack/react-router';
+import { useEffect } from 'react';
+
 import { trackPageView } from '@/lib/analytics';
 
 /**

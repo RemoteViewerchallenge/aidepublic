@@ -1,0 +1,11 @@
+.xterm {
+  padding: 1rem;
+  height: 100%;
+  background: #1e1e1e;
+}
+.xterm-viewport {
+  overflow: hidden;
+}
+.xterm-screen {
+  width: 100%;
+}

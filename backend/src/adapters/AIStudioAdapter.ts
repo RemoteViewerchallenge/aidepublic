@@ -9,16 +9,17 @@
  * - `class AIStudioAdapter`: The concrete class that implements the `ProviderAdapter` interface for AI.Studio.
  */
 
+import pool from '../../../db/index.js';
 import { ApiError, ProviderError } from '../core/customErrors.js';
-import pool from '../db/index.js';
-import {
+import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
   Model,
   ProviderId,
 } from '../types/provider.js';
 import { getEnv } from '../utils/env.js';
-import { ProviderAdapter } from './BaseProviderAdapter.js';
+
+import type { ProviderAdapter } from './BaseProviderAdapter.js';
 
 function createModuleLogger(moduleName: string) {
   return {

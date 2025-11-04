@@ -13,16 +13,17 @@
 
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { GeminiAdapter } from '../adapters/GeminiAdapter';
-import { ModelSelector } from '../core/ModelSelector';
-import { ProviderManager } from '../core/ProviderManager';
-import { StateRepository } from '../state/StateRepository';
+
 // import { agent } from 'volcano-sdk';
 import { createComplexOrchestration } from '../../volcano-sdk/src/orchestration-creator';
 import { agent } from '../../volcano-sdk/src/volcano-sdk';
 import { AIStudioAdapter } from '../adapters/AIStudioAdapter';
+import { GeminiAdapter } from '../adapters/GeminiAdapter';
 import { OpenRouterAdapter } from '../adapters/OpenRouterAdapter';
 import { ArbitrageEngineAdapter } from '../core/ArbitrageEngineAdapter';
+import { ModelSelector } from '../core/ModelSelector';
+import { ProviderManager } from '../core/ProviderManager';
+import { StateRepository } from '../state/StateRepository';
 import { getEnv } from '../utils/env';
 
 // --- Application Composition Root ---
@@ -76,7 +77,7 @@ export const appRouter = t.router({
     )
     .query(async ({ input }) => {
       // 1. Get free models directly from database instead of ProviderManager
-      const { default: pool } = await import('../db/index');
+      const { default: pool } = await import('../../../db/index.js');
       const result = await pool.query(`
         SELECT * FROM models 
         WHERE provider = 'openrouter'
@@ -241,7 +242,7 @@ export const appRouter = t.router({
             )
               return true;
           }
-        } catch (e) {
+        } catch (_e) {
           // ignore
         }
         return false;
@@ -250,7 +251,7 @@ export const appRouter = t.router({
       try {
         const response = await attemptGeneration(adapter, chosenModel.id);
         // Increment use_point for the successfully used model
-        const { default: pool } = await import('../db/index');
+        const { default: pool } = await import('../../../db/index.js');
         await pool.query(
           'UPDATE models SET use_point = use_point + 1 WHERE id = $1',
           [chosenModel.id]
@@ -262,15 +263,15 @@ export const appRouter = t.router({
           providerId: chosenModel.apiProvider,
           modelId: chosenModel.id,
         };
-      } catch (error: any) {
+      } catch (_error: any) {
         // Check if this is the "Developer instruction is not enabled" error
-        const errorMessage = String(error?.message || error || '');
+        const errorMessage = String(_error?.message || _error || '');
         if (errorMessage.includes('Developer instruction is not enabled')) {
           console.warn(
             `🚫 Blacklisting model ${chosenModel.id} due to developer instruction error`
           );
           // Blacklist the model
-          const { default: pool } = await import('../db/index');
+          const { default: pool } = await import('../../../db/index.js');
           await pool.query(
             'UPDATE models SET blacklisted = TRUE WHERE id = $1',
             [chosenModel.id]
@@ -278,10 +279,10 @@ export const appRouter = t.router({
         }
 
         // If this is a rate-limit from the upstream provider, try to route to another provider/model.
-        if (isRateLimitError(error)) {
+        if (isRateLimitError(_error)) {
           console.warn(
             '⚠️ Generation failed due to rate-limit, attempting failover...',
-            error?.message || error
+            _error?.message || _error
           );
 
           // 1) Try alternative providers first (exclude the failing provider)
@@ -317,7 +318,9 @@ export const appRouter = t.router({
                       altModel.id
                     );
                     // Increment use_point for the successfully used alternative model
-                    const { default: pool } = await import('../db/index');
+                    const { default: pool } = await import(
+                      '../../../db/index.js'
+                    );
                     await pool.query(
                       'UPDATE models SET use_point = use_point + 1 WHERE id = $1',
                       [altModel.id]
@@ -339,8 +342,11 @@ export const appRouter = t.router({
                 }
               }
             }
-          } catch (e) {
-            console.warn('Failed to attempt alternative provider selection', e);
+          } catch (_e) {
+            console.warn(
+              'Failed to attempt alternative provider selection',
+              _e
+            );
           }
 
           // mark the failing provider on cooldown so subsequent requests avoid it briefly
@@ -357,8 +363,8 @@ export const appRouter = t.router({
                 COOLDOWN_MS
               );
             }
-          } catch (e) {
-            console.warn('Failed to mark provider cooldown', e);
+          } catch (_e) {
+            console.warn('Failed to mark provider cooldown', _e);
           }
 
           // 2) If no other provider worked, try another model from the same provider (different model id)
@@ -380,7 +386,7 @@ export const appRouter = t.router({
                   candidate.id
                 );
                 // Increment use_point for the successfully used candidate model
-                const { default: pool } = await import('../db/index');
+                const { default: pool } = await import('../../../db/index.js');
                 await pool.query(
                   'UPDATE models SET use_point = use_point + 1 WHERE id = $1',
                   [candidate.id]
@@ -402,10 +408,10 @@ export const appRouter = t.router({
                 continue;
               }
             }
-          } catch (e) {
+          } catch (_e) {
             console.warn(
               'Failed to fetch alternative models from providerManager',
-              e
+              _e
             );
           }
         }
@@ -413,8 +419,8 @@ export const appRouter = t.router({
         // If we reached here, no fallback succeeded. Re-throw with original error context.
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: `Generation failed: ${error.message}`,
-          cause: error,
+          message: `Generation failed: ${_error?.message}`,
+          cause: _error,
         });
       }
     }),
@@ -445,7 +451,7 @@ export const appRouter = t.router({
   getModelsFromDatabase: t.procedure.query(async () => {
     try {
       // Import the pool here to avoid circular dependencies
-      const { default: pool } = await import('../db/index');
+      const { default: pool } = await import('../../../db/index.js');
 
       const result = await pool.query(`
         SELECT * FROM models
@@ -477,10 +483,10 @@ export const appRouter = t.router({
       );
 
       return models;
-    } catch (error: any) {
+    } catch (_error: any) {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
-        message: `Failed to fetch models from database: ${error.message}`,
+        message: `Failed to fetch models from database: ${_error?.message}`,
       });
     }
   }),
@@ -539,11 +545,11 @@ export const appRouter = t.router({
           },
           body: JSON.stringify(requestBody),
         });
-      } catch (error: any) {
+      } catch (_error: any) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: `Failed to connect to Shell MCP at ${shellMcpUrl}. Reason: ${error.message}`,
-          cause: error,
+          message: `Failed to connect to Shell MCP at ${shellMcpUrl}. Reason: ${_error?.message}`,
+          cause: _error,
         });
       }
 
@@ -625,11 +631,11 @@ export const appRouter = t.router({
           stepCount: input.steps.length,
           patterns: input.steps.map(s => s.pattern || 'sequential'),
         };
-      } catch (error: any) {
-        console.error('Orchestration failed:', error);
+      } catch (_error: any) {
+        console.error('Orchestration failed:', _error);
         return {
           success: false,
-          error: error.message,
+          error: _error?.message,
           timestamp: new Date().toISOString(),
         };
       }

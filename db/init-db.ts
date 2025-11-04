@@ -1,7 +1,9 @@
 import 'dotenv/config';
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
 import pool from './index.js';
 
 const __filename = fileURLToPath(import.meta.url);

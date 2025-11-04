@@ -18,11 +18,13 @@ import {
   it,
   vi,
 } from 'vitest';
-import { ProviderAdapter } from '../adapters/BaseProviderAdapter.js';
-import {
+
+import type { ProviderAdapter } from '../adapters/BaseProviderAdapter.js';
+import type {
   StateRepository,
   StoredProviderState,
 } from '../state/StateRepository.js';
+
 import { ProviderManager } from './ProviderManager.js';
 
 // Create mock versions of our dependencies.

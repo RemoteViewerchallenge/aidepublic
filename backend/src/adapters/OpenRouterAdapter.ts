@@ -10,7 +10,7 @@
  */
 
 import { ApiError, ProviderError } from '../core/customErrors';
-import {
+import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
   Model,
@@ -18,7 +18,8 @@ import {
 } from '../types/provider';
 import { getEnv } from '../utils/env';
 import { createModuleLogger } from '../utils/logger';
-import { ProviderAdapter } from './BaseProviderAdapter';
+
+import type { ProviderAdapter } from './BaseProviderAdapter';
 
 const logger = createModuleLogger('OpenRouterAdapter');
 
@@ -228,7 +229,7 @@ export class OpenRouterAdapter implements ProviderAdapter {
           modelId: request.model,
           status: response.status,
           statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
+          headers: `${response.headers}`,
           rawResponsePreview: responseText.slice(0, 400),
         },
         'Received OpenRouter response.' as string

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { agent, type TokenMetadata } from '../src/volcano-sdk.js';
+
 import type { LLMHandle } from '../src/llms/types.js';
+import { agent, type TokenMetadata } from '../src/volcano-sdk.js';
 
 describe('Token-level streaming', () => {
   // Per-step onToken tests

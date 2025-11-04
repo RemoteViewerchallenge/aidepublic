@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { llmMistral } from '../../dist/volcano-sdk.js';
 
 describe('Mistral provider (integration)', () => {

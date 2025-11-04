@@ -1,5 +1,6 @@
 // src/orchestration-creator.ts
-import { agent, AgentBuilder, Step } from './volcano-sdk';
+import type { AgentBuilder, Step } from './volcano-sdk';
+import { agent } from './volcano-sdk';
 
 export type Role = {
   name: string;

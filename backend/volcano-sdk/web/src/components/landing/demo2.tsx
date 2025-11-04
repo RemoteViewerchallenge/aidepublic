@@ -1,7 +1,8 @@
-import { Highlight } from "prism-react-renderer";
-import { customThemeLight } from "./code-theme";
 import { Check, Copy } from "lucide-react";
+import { Highlight } from "prism-react-renderer";
 import { useState, useEffect, useRef } from "react";
+
+import { customThemeLight } from "./code-theme";
 
 const codeDemo = `import { agent, llmOpenAI, mcp } from "volcano-sdk";
 

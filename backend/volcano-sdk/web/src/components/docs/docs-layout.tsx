@@ -1,12 +1,16 @@
+import { MDXProvider } from "@mdx-js/react";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import type { ReactNode } from "react";
+
 import { Header } from "@/components/landing/header";
+import { mdxComponents } from "@/components/mdx-components";
+
+import { FeatureCardsTransformer } from "./feature-cards-transformer";
 import { DocsSidebar } from "./sidebar";
 import { TableOfContents } from "./table-of-contents-generated";
-import { MDXProvider } from "@mdx-js/react";
-import { mdxComponents } from "@/components/mdx-components";
-import { FeatureCardsTransformer } from "./feature-cards-transformer";
-import { Menu, X } from "lucide-react";
+
+
 
 interface DocsLayoutProps {
   children: ReactNode;

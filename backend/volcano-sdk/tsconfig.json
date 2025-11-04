@@ -1,18 +1,18 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "lib": ["ES2020", "DOM"],
-    "module": "ES2022",
-    "moduleResolution": "Bundler",
     "declaration": true,
     "outDir": "dist",
     "rootDir": "src",
-    "strict": true,
-    "esModuleInterop": true,
-    "downlevelIteration": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true
+    "downlevelIteration": true
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts"],
-  "exclude": ["node_modules", "dist", "examples"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "tests/**/*.ts",
+    "web/**/*.ts",
+    "web/**/*.tsx",
+    "*.ts"
+  ],
+  "exclude": ["node_modules", "dist", "examples", "web/dist"]
 }

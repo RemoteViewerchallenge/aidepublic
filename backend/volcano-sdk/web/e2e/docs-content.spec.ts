@@ -1,6 +1,8 @@
-import { test, expect } from "@playwright/test";
 import path from "path";
 import { fileURLToPath } from "url";
+
+import { test, expect } from "@playwright/test";
+
 import { getAllMDXTextContent } from "./helpers/mdx-content-extractor";
 
 const __filename = fileURLToPath(import.meta.url);

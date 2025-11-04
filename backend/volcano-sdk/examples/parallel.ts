@@ -2,6 +2,9 @@
 // Run multiple LLM tasks simultaneously to save time
 import { agent, llmOpenAI } from "../dist/volcano-sdk.js";
 
+// Example 3: Multi-provider parallel execution
+import { llmAnthropic, llmMistral } from "../dist/volcano-sdk.js";
+
 const llm = llmOpenAI({ 
   apiKey: process.env.OPENAI_API_KEY!, 
   model: "gpt-4o-mini" 
@@ -38,9 +41,6 @@ const namedResults = await agent({ llm })
   .run();
 
 console.log("Summary:", namedResults[1].llmOutput);
-
-// Example 3: Multi-provider parallel execution
-import { llmAnthropic, llmMistral } from "../dist/volcano-sdk.js";
 
 if (process.env.ANTHROPIC_API_KEY && process.env.MISTRAL_API_KEY) {
   const claude = llmAnthropic({ 

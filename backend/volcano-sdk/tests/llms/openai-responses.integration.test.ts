@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { agent, llmOpenAIResponses } from '../../dist/volcano-sdk.js';
 
 describe('OpenAI Structured Outputs (Responses API)', () => {

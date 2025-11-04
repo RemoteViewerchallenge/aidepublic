@@ -1,30 +1,97 @@
 {
   "folders": [
     {
-      "name": "DoMoreCo - AI Resource Optimizer",
-      "path": "."
+      "name": "Backend",
+      "path": "backend"
+    },
+    {
+      "name": "DoMoreCo - Frontend",
+      "path": "frontend"
+    },
+    {
+      "name": "MCP Servers",
+      "path": "mcp"
+    },
+    {
+      "name": "Documents",
+      "path": "docs"
+    },
+    {
+      "name": "Database",
+      "path": "db"
+    },
+    {
+      "name": "Config",
+      "path": "config"
+    },
+    {
+      "name": "Scripts",
+      "path": "scripts"
+    },
+    {
+      "name": "State",
+      "path": "state"
+    },
+    {
+      "name": "Test Data",
+      "path": "test-data"
     }
   ],
   "settings": {
-    "typescript.preferences.moduleSpecifier": "relative",
+    // Shared settings
     "editor.formatOnSave": true,
     "files.exclude": {
       "**/node_modules": true,
       "**/dist": true
+    },
+
+    // Disable linting for the Documents folder
+    "documents": {
+      "eslint.enable": false
+    },
+
+    // Backend-specific settings (applied to first folder)
+    "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "typescript.preferences.moduleSpecifier": "relative"
+    },
+
+    // Frontend-specific settings (applied to frontend/my-app)
+    "frontend/my-app": {
+      "typescript.tsdk": "./node_modules/typescript/lib",
+      "eslint.options": {
+        "configFile": "eslint.config.cjs"
+      },
+      "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+      },
+      "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+      }
     }
   },
-  // Workspace extension recommendations removed to avoid auto-install behavior.
-  // If you want to re-enable specific recommendations, add them under
-  // "extensions.recommendations".
   "tasks": {
     "version": "2.0.0",
     "tasks": [
       {
-        "label": "dev",
+        "label": "Backend: Dev",
         "type": "shell",
         "command": "npm run dev",
         "group": "build",
-        "isBackground": true
+        "isBackground": true,
+        "options": {
+          "cwd": "${workspaceFolder}"
+        }
+      },
+      {
+        "label": "Frontend: Dev",
+        "type": "shell",
+        "command": "npm run dev",
+        "group": "build",
+        "isBackground": true,
+        "options": {
+          "cwd": "${workspaceFolder}/frontend/my-app"
+        }
       }
     ]
   }

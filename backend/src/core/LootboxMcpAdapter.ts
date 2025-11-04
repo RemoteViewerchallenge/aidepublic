@@ -19,14 +19,6 @@ interface LootboxNamespace {
   functions: LootboxTool[];
 }
 
-interface LootboxRpcClientInterface {
-  fs: any;
-  kv: any;
-  memory: any;
-  sqlite: any;
-  graphql: any;
-}
-
 class LootboxRpcClient {
   private baseUrl: string;
 
@@ -156,7 +148,8 @@ export class LootboxMcpAdapter {
       }
     );
 
-    (this as any).setupHandlers?.();
+    // Set up request handlers immediately
+    this.setupHandlers();
 
     // Kick off async namespace loading without making the constructor async
     void this.loadAllNamespaces().catch(error => {

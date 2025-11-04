@@ -1,3 +1,6 @@
+import { useNavigate } from "@tanstack/react-router";
+import Fuse, { type FuseResult } from "fuse.js";
+import { Search, FileText, Hash, X, CornerDownLeft } from "lucide-react";
 import {
   useState,
   useEffect,
@@ -6,12 +9,11 @@ import {
   useCallback,
   useTransition,
 } from "react";
-import { useNavigate } from "@tanstack/react-router";
-import Fuse, { type FuseResult } from "fuse.js";
-import { Search, FileText, Hash, X, CornerDownLeft } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 import searchIndexData from "@/data/search-index.json";
 import searchSuggestionsData from "@/data/search-suggestions.json";
+import { cn } from "@/lib/utils";
+
 import { SearchSuggestions } from "./search-suggestions";
 
 type SearchDocument = {

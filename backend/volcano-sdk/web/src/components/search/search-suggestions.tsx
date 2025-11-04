@@ -1,6 +1,7 @@
 import { FileText, Zap, Code, Lightbulb, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 import searchSuggestions from "@/data/search-suggestions.json";
+import { cn } from "@/lib/utils";
 
 interface SearchSuggestionsProps {
   onSelectSuggestion: (query: string, path?: string) => void;

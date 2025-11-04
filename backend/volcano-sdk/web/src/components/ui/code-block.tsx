@@ -1,5 +1,5 @@
-import { Highlight } from "prism-react-renderer";
 import { Copy, Check } from "lucide-react";
+import { Highlight } from "prism-react-renderer";
 import { useState } from "react";
 
 // Dark theme with black background and vibrant accent colors

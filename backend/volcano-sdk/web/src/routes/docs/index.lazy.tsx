@@ -1,8 +1,9 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
+
 import { DocsLayout } from "@/components/docs/docs-layout";
-import { SEOHead } from "@/seo/seo-head";
 import DocsContent from "@/content/docs/index.mdx";
 import { useHashNavigation } from "@/hooks/use-hash-navigation";
+import { SEOHead } from "@/seo/seo-head";
 
 export const Route = createLazyFileRoute("/docs/")({
   component: DocsPage,

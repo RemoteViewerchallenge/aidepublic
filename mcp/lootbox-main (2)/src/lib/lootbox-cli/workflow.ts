@@ -1,9 +1,9 @@
-import { HandlebarsJS } from "https://deno.land/x/handlebars/mod.ts";
-import { parse as parseYaml } from "jsr:@std/yaml@^1.0.0";
-import { generateSessionId, logWorkflowEvent } from "../workflow_log.ts";
-import type { FlowState } from "./types.ts";
+import { HandlebarsJS } from 'https://deno.land/x/handlebars/mod.ts';
+import { parse as parseYaml } from 'jsr:@std/yaml@^1.0.0';
+import { generateSessionId, logWorkflowEvent } from '../workflow_log';
+import type { FlowState } from './types.ts';
 
-const STATE_FILE = ".lootbox-workflow.json";
+const STATE_FILE = '.lootbox-workflow.json';
 
 // Session ID for current workflow run (generated on start, persisted in state)
 let currentSessionId: string | null = null;
@@ -25,12 +25,12 @@ interface TemplateContext {
 }
 
 // Register Handlebars helpers
-HandlebarsJS.registerHelper("eq", (a: unknown, b: unknown) => a === b);
-HandlebarsJS.registerHelper("ne", (a: unknown, b: unknown) => a !== b);
-HandlebarsJS.registerHelper("lt", (a: number, b: number) => a < b);
-HandlebarsJS.registerHelper("gt", (a: number, b: number) => a > b);
-HandlebarsJS.registerHelper("lte", (a: number, b: number) => a <= b);
-HandlebarsJS.registerHelper("gte", (a: number, b: number) => a >= b);
+HandlebarsJS.registerHelper('eq', (a: unknown, b: unknown) => a === b);
+HandlebarsJS.registerHelper('ne', (a: unknown, b: unknown) => a !== b);
+HandlebarsJS.registerHelper('lt', (a: number, b: number) => a < b);
+HandlebarsJS.registerHelper('gt', (a: number, b: number) => a > b);
+HandlebarsJS.registerHelper('lte', (a: number, b: number) => a <= b);
+HandlebarsJS.registerHelper('gte', (a: number, b: number) => a >= b);
 
 export async function loadWorkflowState(): Promise<FlowState | null> {
   try {
@@ -80,7 +80,7 @@ async function displayStep(
   const steps = parseWorkflowFile(content);
 
   if (state.section >= steps.length) {
-    console.log("Workflow complete! All steps have been shown.");
+    console.log('Workflow complete! All steps have been shown.');
     await deleteWorkflowState();
     Deno.exit(0);
   }
@@ -151,7 +151,7 @@ async function resolveWorkflowPath(file: string): Promise<string> {
     return file;
   } catch {
     // If not found, try in workflows directory
-    const { get_config } = await import("../get_config.ts");
+    const { get_config } = await import('../get_config.ts');
     const config = await get_config();
     const fallbackPath = `${config.workflows_dir}/${file}`;
     try {
@@ -190,7 +190,7 @@ export async function workflowStart(file: string): Promise<void> {
     // Log workflow start event
     await logWorkflowEvent({
       timestamp: Date.now(),
-      event_type: "start",
+      event_type: 'start',
       workflow_file: resolvedPath,
       step_number: null,
       loop_iteration: null,
@@ -213,8 +213,8 @@ export async function workflowStart(file: string): Promise<void> {
 export async function workflowStep(endLoopReason?: string): Promise<void> {
   const state = await loadWorkflowState();
   if (!state) {
-    console.error("Error: No active workflow");
-    console.error("Start a workflow with: lootbox workflow start <file>");
+    console.error('Error: No active workflow');
+    console.error('Start a workflow with: lootbox workflow start <file>');
     Deno.exit(1);
   }
 
@@ -223,12 +223,12 @@ export async function workflowStep(endLoopReason?: string): Promise<void> {
     const steps = parseWorkflowFile(content);
 
     if (state.section >= steps.length) {
-      console.log("Workflow complete! All steps have been shown.");
+      console.log('Workflow complete! All steps have been shown.');
 
       // Log completion event
       await logWorkflowEvent({
         timestamp: Date.now(),
-        event_type: "complete",
+        event_type: 'complete',
         workflow_file: state.file,
         step_number: state.section,
         loop_iteration: null,
@@ -246,7 +246,7 @@ export async function workflowStep(endLoopReason?: string): Promise<void> {
     // Handle --end-loop flag
     if (endLoopReason !== undefined) {
       if (!step.loop) {
-        console.error("Error: Current step is not a loop");
+        console.error('Error: Current step is not a loop');
         Deno.exit(1);
       }
 
@@ -260,7 +260,7 @@ export async function workflowStep(endLoopReason?: string): Promise<void> {
       // Log end_loop event
       await logWorkflowEvent({
         timestamp: Date.now(),
-        event_type: "end_loop",
+        event_type: 'end_loop',
         workflow_file: state.file,
         step_number: state.section + 1,
         loop_iteration: iteration,
@@ -291,7 +291,7 @@ export async function workflowStep(endLoopReason?: string): Promise<void> {
     if (step.loop) {
       await logWorkflowEvent({
         timestamp: Date.now(),
-        event_type: "loop_iteration",
+        event_type: 'loop_iteration',
         workflow_file: state.file,
         step_number: state.section + 1,
         loop_iteration: iteration,
@@ -301,7 +301,7 @@ export async function workflowStep(endLoopReason?: string): Promise<void> {
     } else {
       await logWorkflowEvent({
         timestamp: Date.now(),
-        event_type: "step",
+        event_type: 'step',
         workflow_file: state.file,
         step_number: state.section + 1,
         loop_iteration: null,
@@ -343,14 +343,14 @@ export async function workflowStep(endLoopReason?: string): Promise<void> {
 export async function workflowReset(): Promise<void> {
   const state = await loadWorkflowState();
   if (!state) {
-    console.error("Error: No active workflow");
+    console.error('Error: No active workflow');
     Deno.exit(1);
   }
 
   // Log reset event
   await logWorkflowEvent({
     timestamp: Date.now(),
-    event_type: "reset",
+    event_type: 'reset',
     workflow_file: state.file,
     step_number: state.section + 1,
     loop_iteration: state.loopIteration || null,
@@ -366,7 +366,7 @@ export async function workflowReset(): Promise<void> {
 export async function workflowStatus(): Promise<void> {
   const state = await loadWorkflowState();
   if (!state) {
-    console.log("No active workflow");
+    console.log('No active workflow');
     return;
   }
 
@@ -398,14 +398,14 @@ export async function workflowStatus(): Promise<void> {
 export async function workflowAbort(reason: string): Promise<void> {
   const state = await loadWorkflowState();
   if (!state) {
-    console.error("Error: No active workflow");
+    console.error('Error: No active workflow');
     Deno.exit(1);
   }
 
   // Log abort event
   await logWorkflowEvent({
     timestamp: Date.now(),
-    event_type: "abort",
+    event_type: 'abort',
     workflow_file: state.file,
     step_number: state.section + 1,
     loop_iteration: state.loopIteration || null,

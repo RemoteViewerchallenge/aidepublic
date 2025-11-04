@@ -12,10 +12,11 @@
  * - This test catches ES module compatibility issues that only appear in production
  */
 
-import { describe, it, expect } from 'vitest';
-import { createVolcanoTelemetry, agent } from '../dist/volcano-sdk.js';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { describe, it, expect } from 'vitest';
+
+import { createVolcanoTelemetry, agent } from '../dist/volcano-sdk.js';
 
 function makeMockLLM() {
   return {

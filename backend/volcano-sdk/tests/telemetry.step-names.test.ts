@@ -1,8 +1,8 @@
+import { InMemorySpanExporter, SimpleSpanProcessor , NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { agent } from '../src/volcano-sdk';
+
 import { createVolcanoTelemetry } from '../src/telemetry';
-import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-node';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { agent } from '../src/volcano-sdk';
 
 describe('Volcano SDK - Step and Agent Naming', () => {
   let spanExporter: InMemorySpanExporter;

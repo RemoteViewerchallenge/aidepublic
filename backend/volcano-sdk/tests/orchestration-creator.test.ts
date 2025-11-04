@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createOrchestration, Role } from '../src/orchestration-creator';
+
+import type { Role } from '../src/orchestration-creator';
+import { createOrchestration } from '../src/orchestration-creator';
 import { agent } from '../src/volcano-sdk';
 
 describe('createOrchestration', () => {

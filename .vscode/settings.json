@@ -28,14 +28,18 @@
 
   // Search and file exclusions
   "search.exclude": {
+     "**volcano-sdk": true,
     "**/node_modules": true,
     "**/dist": true,
     "**/*.log": true,
     "**/coverage": true
   },
   "files.exclude": {
+     "**volcano-sdk": true,
     "**/node_modules": true,
-    "**/dist": true,
+    "dist": true,
+    "logs": true,
+    ".vite": true,
     "**/.git": true,
     "**/.DS_Store": true
   },
@@ -123,6 +127,7 @@
 
   // File watching
   "files.watcherExclude": {
+     "**volcano-sdk": true,
     "**/node_modules/**": true,
     "**/dist/**": true,
     "**/.git/**": true

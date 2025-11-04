@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { GeminiAdapter } from './GeminiAdapter.js';
+
+import type { Model } from '../types/provider.js';
 import { getEnv } from '../utils/env.js';
-import { Model } from '../types/provider.js';
+
+import { GeminiAdapter } from './GeminiAdapter.js';
 
 describe.skip('GeminiAdapter (Integration)', () => {
   let adapter: GeminiAdapter;

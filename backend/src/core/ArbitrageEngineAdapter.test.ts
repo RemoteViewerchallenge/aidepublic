@@ -12,11 +12,13 @@
  * isolation, ensuring it correctly calls each part of our engine in the right order.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ProviderAdapter } from '../adapters/BaseProviderAdapter.js';
-import { Model } from '../types/provider.js';
+
+import type { ProviderAdapter } from '../adapters/BaseProviderAdapter.js';
+import type { Model } from '../types/provider.js';
+
 import { ArbitrageEngineAdapter } from './ArbitrageEngineAdapter.js';
-import { ModelSelector } from './ModelSelector.js';
-import { ProviderManager } from './ProviderManager.js';
+import type { ModelSelector } from './ModelSelector.js';
+import type { ProviderManager } from './ProviderManager.js';
 
 // Mock dependencies
 const mockProviderManager: Partial<ProviderManager> = {

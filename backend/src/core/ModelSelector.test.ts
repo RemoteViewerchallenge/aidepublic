@@ -8,8 +8,11 @@
  * logic and scoring rules are still applicable and important.
  */
 import * as fsPromises from 'fs/promises';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Model } from '../types/provider.js';
+
+import type { Model } from '../types/provider.js';
+
 import { ModelSelector } from './ModelSelector.js';
 
 // Mock the fs/promises module to control the config for tests.

@@ -1,7 +1,7 @@
-import { visit } from "unist-util-visit";
-import type { Plugin } from "unified";
 import type { Root } from "mdast";
+import type { Plugin } from "unified";
 import type { Node } from "unist";
+import { visit } from "unist-util-visit";
 
 // Type for directive nodes
 interface DirectiveNode extends Node {

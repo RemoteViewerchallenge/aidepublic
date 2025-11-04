@@ -1,8 +1,11 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { spawn } from 'node:child_process';
-import { agent, createVolcanoTelemetry, mcp } from '../src/volcano-sdk.js';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+
 import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+
+import { agent, createVolcanoTelemetry, mcp } from '../src/volcano-sdk.js';
+
 
 function waitForOutput(proc: any, match: RegExp, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {

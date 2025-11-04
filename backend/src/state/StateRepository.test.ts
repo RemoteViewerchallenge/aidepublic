@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { StateRepository, StateReadError } from './StateRepository.js';
+
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+
+import { StateRepository } from './StateRepository.js';
 
 const TEST_DIR_NAME = 'test-data';
 
@@ -19,7 +21,7 @@ describe('StateRepository', () => {
   afterEach(async () => {
     try {
       await fs.rm(testDataDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });
@@ -69,7 +71,13 @@ describe('StateRepository', () => {
       await fs.mkdir(testDataDir, { recursive: true });
       await fs.writeFile(fullPath, '{ "key": "value", }'); // Invalid JSON with trailing comma
 
-      await expect(stateRepository.readJson(invalidJsonPath)).rejects.toThrow(StateReadError);
+      try {
+        await stateRepository.readJson(invalidJsonPath);
+        throw new Error('Expected readJson to throw StateReadError');
+      } catch (_err) {
+        expect(_err).toBeInstanceOf(Error);
+        expect((_err as Error).name).toBe('StateReadError');
+      }
     });
   });
 });

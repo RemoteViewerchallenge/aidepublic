@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+
 import type { LLMHandle, LLMToolResult, ToolDefinition } from "./types";
 import { createOpenAICompatibleTools, parseOpenAICompatibleResponse } from "./utils.js";
 

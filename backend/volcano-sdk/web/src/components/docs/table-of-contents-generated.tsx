@@ -1,6 +1,8 @@
-import { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "@tanstack/react-router";
+import { useEffect, useState, useRef } from "react";
+
 import { cn } from "@/lib/utils";
+
 import { generatedNavigation } from "./navigation-generated";
 
 interface TableOfContentsProps {

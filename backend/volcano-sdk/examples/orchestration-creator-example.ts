@@ -1,5 +1,8 @@
 // examples/orchestration-creator-example.ts
-import { agent, StepResult } from '../src/volcano-sdk.js';
+import type { Role } from '../src/orchestration-creator.js';
+import { createOrchestration } from '../src/orchestration-creator.js';
+import type { StepResult } from '../src/volcano-sdk.js';
+import { agent } from '../src/volcano-sdk.js';
 // import llmOpenAI from the correct location or define it here if needed
 // Mock llmOpenAI implementation for example purposes
 const llmOpenAI = (config: { apiKey: string; model: string }) => ({
@@ -26,7 +29,6 @@ const llmOpenAI = (config: { apiKey: string; model: string }) => ({
   client: {}, // Mock client object
   model: config.model,
 });
-import { createOrchestration, Role } from '../src/orchestration-creator.js';
 
 // Run with: npx tsx examples/orchestration-creator-example.ts
 

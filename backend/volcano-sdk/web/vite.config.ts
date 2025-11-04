@@ -1,13 +1,14 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import { TanStackRouterVite } from "@tanstack/router-vite-plugin";
 import mdx from "@mdx-js/rollup";
-import remarkGfm from "remark-gfm";
-import remarkFrontmatter from "remark-frontmatter";
-import remarkDirective from "remark-directive";
-import { remarkDirectiveToComponent } from "./src/lib/remark-directive-to-component";
+import { TanStackRouterVite } from "@tanstack/router-vite-plugin";
+import react from "@vitejs/plugin-react";
 import rehypeSlug from "rehype-slug";
+import remarkDirective from "remark-directive";
+import remarkFrontmatter from "remark-frontmatter";
+import remarkGfm from "remark-gfm";
+import { defineConfig } from "vite";
+
 import { rehypeCleanIds } from "./src/lib/rehype-clean-ids";
+import { remarkDirectiveToComponent } from "./src/lib/remark-directive-to-component";
 
 // https://vite.dev/config/
 export default defineConfig({

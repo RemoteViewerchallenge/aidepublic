@@ -14,7 +14,7 @@
  * - `assignTask(taskId: string, roleId: string): Promise<void>`
  */
 
-import { Task } from '../types/task.js';
+import type { Task } from '../types/task.js';
 
 export class TaskManager {
   // In a real implementation, this would interact with a database or state file

@@ -1,8 +1,10 @@
-import { test, expect } from "@playwright/test";
-import path from "path";
 import fs from "fs";
+import path from "path";
 import { fileURLToPath } from "url";
+
+import { test, expect } from "@playwright/test";
 import matter from "gray-matter";
+
 import { extractHeadings } from "../src/scripts/generate-toc";
 
 const __filename = fileURLToPath(import.meta.url);

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { llmVertexStudio } from '../../dist/volcano-sdk.js';
 
 describe('Vertex Studio provider (integration)', () => {

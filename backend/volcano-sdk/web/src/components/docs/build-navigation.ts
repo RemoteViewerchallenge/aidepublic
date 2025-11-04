@@ -1,4 +1,3 @@
-import { generatedNavigation } from "./navigation-generated";
 import {
   Book,
   Zap,
@@ -10,6 +9,8 @@ import {
   Braces,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+
+import { generatedNavigation } from "./navigation-generated";
 
 export interface NavigationItem {
   title: string;

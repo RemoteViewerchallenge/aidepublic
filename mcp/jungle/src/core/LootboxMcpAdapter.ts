@@ -640,7 +640,9 @@ export class LootboxMcpAdapter {
     // Register prompts/list to return an empty paginated list (no prompts yet)
     this.server.setRequestHandler(
       ListPromptsRequestSchema,
-      async (request: any) => {
+      async (_request: any) => {
+        // reference the parameter to avoid "declared but its value is never read"
+        void _request;
         const prompts = (this as any)._manifestPrompts || [];
         return {
           prompts,
