@@ -65,3 +65,9 @@ my-vscode-extension/out/
 .env
 .env.*
 !.env.example
+
+# Local binaries
+bin/
+tmp_download/
+mcp/jungle/mcpjungle-cli
+mcp/jungle/mcpjungle_server

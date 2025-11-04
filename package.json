@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "build:notest": "tsc",
+    "postinstall": "node scripts/download-mcpjungle.mjs",
     "start": "node dist/src/server/index.js",
     "dev": "tsx watch backend/src/server/index.ts",
     "dev:client": "vite",
