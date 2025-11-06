@@ -44,6 +44,7 @@ const arbitrageEngineAdapter = new ArbitrageEngineAdapter(
   providerManager,
   modelSelector as any
 );
+const codeModeManager = new CodeModeManager();
 
 // Initialize the ProviderManager to start health checks and load state.
 // This is now handled in server.ts to ensure it runs before model sync.

@@ -1,7 +1,19 @@
-import 'dotenv/config';
 
-import pool from '../../../db/index.js';
+import 'dotenv/config';
+import pg from 'pg';
 import { getEnv } from '../utils/env.js';
+import { ProviderAdapter } from '../adapters/BaseProviderAdapter.js';
+import { TogetherAdapter } from '../adapters/TogetherAdapter.js';
+import { GroqAdapter } from '../adapters/GroqAdapter.js';
+import { MistralAdapter } from '../adapters/MistralAdapter.js';
+import { OpenRouterAdapter } from '../adapters/OpenRouterAdapter.js';
+import { AIStudioAdapter } from '../adapters/AIStudioAdapter.js';
+
+const { Pool } = pg;
+const connectionString = getEnv('PG_CONNECTION');
+const pool = new Pool({
+  connectionString,
+});
 
 // Model-specific rate limits (Requests Per Minute) from Google's documentation.
 // This data is not available from the API, so we maintain it here.
@@ -33,8 +45,6 @@ async function syncModels() {
   try {
     client = await pool.connect();
     await client.query('BEGIN');
-
-    // Clear the existing models table
     await client.query('TRUNCATE TABLE models');
 
     // Fetch AI Studio models directly from Google's API
@@ -195,7 +205,7 @@ async function syncModels() {
     }
 
     await client.query('COMMIT');
-    console.log('Successfully synchronized models from all sources.');
+    console.log('✅ Successfully synchronized models from all sources.');
   } catch (error) {
     if (client) {
       await client.query('ROLLBACK');
@@ -205,6 +215,7 @@ async function syncModels() {
     if (client) {
       client.release();
     }
+    await pool.end(); // Close the pool
   }
 }
 
