@@ -25,6 +25,7 @@ import { ModelSelector } from '../core/ModelSelector';
 import { ProviderManager } from '../core/ProviderManager';
 import { StateRepository } from '../state/StateRepository';
 import { getEnv } from '../utils/env';
+import { mcpRouter } from './mcp/mcp';
 
 // --- Application Composition Root ---
 // This is where we instantiate and wire together all the core components of our application.
@@ -648,6 +649,7 @@ export const appRouter = t.router({
       aistudio: new AIStudioAdapter().isEnabled,
     };
   }),
+  mcp: mcpRouter,
 });
 
 // Export the type of the router for the client to use. This is key for end-to-end type safety.
