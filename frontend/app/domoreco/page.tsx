@@ -1,9 +1,19 @@
 'use client';
 
-import SharedMonacoEditor from '../../components/SharedMonacoEditor';
-// Simple types
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 
+import McpServerManager from '../../components/McpServerManager';
+import React from 'react';
+import RoleMcpSelector from '../../components/RoleMcpSelector';
+
+// Dynamically import the editor to prevent SSR issues ("window is not defined")
+const SharedMonacoEditor = dynamic(
+  () => import('../../components/SharedMonacoEditor'),
+  { ssr: false }
+);
+
+// --- Types ---
 interface Role {
   id: string;
   title: string;
@@ -35,7 +45,7 @@ interface ProviderStatus {
   aistudio: boolean;
 }
 
-// Test API function - using working non-batch format
+// --- API Functions ---
 const testAPI = async (): Promise<any> => {
   try {
     const response = await fetch('/api/trpc/getModelsFromDatabase');
@@ -43,7 +53,6 @@ const testAPI = async (): Promise<any> => {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     const data = await response.json();
-    // tRPC returns an array for batch calls, get the first result
     const result = Array.isArray(data) ? data[0] : data;
     return result.result?.data || result.result || data;
   } catch (error) {
@@ -52,7 +61,6 @@ const testAPI = async (): Promise<any> => {
   }
 };
 
-// Get model statistics
 const getModelStats = async (
   parameters: Role['parameters']
 ): Promise<ModelStats> => {
@@ -62,7 +70,6 @@ const getModelStats = async (
       return { total: 0, matching: 0, byProvider: {} };
     }
 
-    // Filter models based on parameters
     const matchingModels = models.filter((model: any) => {
       if (parameters.minContext && model.contextLength < parameters.minContext)
         return false;
@@ -74,7 +81,6 @@ const getModelStats = async (
       return true;
     });
 
-    // Count by provider
     const byProvider: Record<string, number> = {};
     matchingModels.forEach((model: any) => {
       byProvider[model.provider] = (byProvider[model.provider] || 0) + 1;
@@ -91,15 +97,15 @@ const getModelStats = async (
   }
 };
 
-export default function MonacoSharedMultiPage() {
-  // Role manager state (working foundation)
+export default function DoMoreCoPage() {
+  // --- State ---
   const [currentRole, setCurrentRole] = useState<Role>({
     id: 'default',
     title: 'Assistant',
     prompt: 'You are a helpful AI assistant.',
     parameters: {
-      minContext: 1000, // Lower minimum context to match more models
-      maxContext: 200000, // Higher maximum to be more inclusive
+      minContext: 1000,
+      maxContext: 200000,
       hasTools: false,
       vision: false,
       embed: false,
@@ -117,8 +123,6 @@ export default function MonacoSharedMultiPage() {
     null
   );
   const [savedRoles, setSavedRoles] = useState<Role[]>([]);
-
-  // 8-column workspace state for shared Monaco editors
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
   const [columnRoles, setColumnRoles] = useState<(Role | null)[]>(
     Array(8).fill(null)
@@ -130,55 +134,36 @@ export default function MonacoSharedMultiPage() {
   const [selectedModels, setSelectedModels] = useState<string[]>(
     Array(8).fill('')
   );
-
-  // Add state for current model selection display
   const [currentModelDisplay, setCurrentModelDisplay] = useState<string>(
     'Model will be selected on generation'
   );
 
-  // Test API connection on mount
+  // --- Effects ---
   useEffect(() => {
     const testConnection = async () => {
       const result = await testAPI();
-      if (result) {
-        setApiStatus(
-          `✅ Connected: ${
-            Array.isArray(result) ? result.length : 'Unknown'
-          } models`
-        );
-      } else {
-        setApiStatus('❌ API connection failed');
-      }
+      setApiStatus(
+        result
+          ? `✅ Connected: ${
+              Array.isArray(result) ? result.length : 'Unknown'
+            } models`
+          : '❌ API connection failed'
+      );
     };
     testConnection();
   }, []);
 
-  // Fetch provider status on mount
   useEffect(() => {
     const getStatus = async () => {
       try {
         const response = await fetch('/api/trpc/getProviderStatus');
         const data = await response.json();
-        // Normalize tRPC response shapes. Possible shapes:
-        // - batch: [{ result: { data: ... } }]
-        // - single: { result: { data: ... } }
-        // - direct: { ... }
         let status: any = null;
         if (Array.isArray(data) && data.length > 0) {
-          const item = data[0];
-          status = item?.result?.data ?? item?.result ?? item;
+          status = data[0]?.result?.data ?? data[0]?.result ?? data[0];
         } else if (data && typeof data === 'object') {
           status = data.result?.data ?? data.result ?? data;
-        } else {
-          status = data;
         }
-
-        if (!status) {
-          console.warn('Provider status response had unexpected shape', {
-            data,
-          });
-        }
-
         setProviderStatus(status);
       } catch (error) {
         console.error('Failed to get provider status:', error);
@@ -187,7 +172,6 @@ export default function MonacoSharedMultiPage() {
     getStatus();
   }, []);
 
-  // Update model stats when parameters change
   useEffect(() => {
     const updateStats = async () => {
       const stats = await getModelStats(currentRole.parameters);
@@ -196,14 +180,11 @@ export default function MonacoSharedMultiPage() {
     updateStats();
   }, [currentRole.parameters]);
 
-  // Load saved roles (but make them short-lived - clear after session)
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('workspace-roles') || '[]');
-      // Clear saved roles after loading to make them short-lived
       localStorage.removeItem('workspace-roles');
       setSavedRoles(saved);
-      // Make all roles (current + saved) available for column assignment
       const allRoles = [currentRole, ...saved];
       const uniqueRoles = Array.from(
         new Map(allRoles.map(role => [role.id, role])).values()
@@ -214,13 +195,11 @@ export default function MonacoSharedMultiPage() {
     }
   }, [currentRole]);
 
+  // --- Handlers ---
   const updateRoleParameter = (key: keyof Role['parameters'], value: any) => {
     setCurrentRole({
       ...currentRole,
-      parameters: {
-        ...currentRole.parameters,
-        [key]: value,
-      },
+      parameters: { ...currentRole.parameters, [key]: value },
     });
   };
 
@@ -229,8 +208,6 @@ export default function MonacoSharedMultiPage() {
       const roleToSave = { ...currentRole, id: Date.now().toString() };
       const updated = [...savedRoles, roleToSave];
       setSavedRoles(updated);
-      // Don't save to localStorage to keep roles short-lived
-      // localStorage.setItem('workspace-roles', JSON.stringify(updated));
       alert('Role created successfully (temporary)!');
     } catch (error) {
       console.error('Failed to save role:', error);
@@ -238,18 +215,13 @@ export default function MonacoSharedMultiPage() {
     }
   };
 
-  const loadRole = (role: Role) => {
-    setCurrentRole(role);
-  };
+  const loadRole = (role: Role) => setCurrentRole(role);
 
   const deleteRole = (roleId: string) => {
     const updated = savedRoles.filter(r => r.id !== roleId);
     setSavedRoles(updated);
-    // Don't persist to localStorage for short-lived roles
-    // localStorage.setItem('workspace-roles', JSON.stringify(updated));
   };
 
-  // 8-column workspace functions
   const updateEditorValue = (columnIndex: number, value: string) => {
     const newValues = [...editorValues];
     newValues[columnIndex] = value;
@@ -263,14 +235,11 @@ export default function MonacoSharedMultiPage() {
     setColumnRoles(newColumnRoles);
   };
 
-  // Generate content for a specific column using its specific prompt and assigned role
   const generateForColumn = async (columnIndex: number) => {
     const editorValue = editorValues[columnIndex];
     if (!editorValue.trim()) return;
 
-    // Use column-specific role if assigned, otherwise fall back to current role
     const roleToUse = columnRoles[columnIndex] || currentRole;
-
     const updatedGenerating = [...isGenerating];
     updatedGenerating[columnIndex] = true;
     setIsGenerating(updatedGenerating);
@@ -278,35 +247,24 @@ export default function MonacoSharedMultiPage() {
     try {
       const result = await generateWithLLM(editorValue, roleToUse);
       const newValues = [...editorValues];
-      // Append the response to the existing content
-      const separator = '\n\n--- LLM Response ---\n';
-      newValues[columnIndex] = editorValue + separator + result.text;
+      newValues[columnIndex] += `\n\n--- LLM Response ---\n${result.text}`;
       setEditorValues(newValues);
 
       const newSelectedModels = [...selectedModels];
-      newSelectedModels[columnIndex] = result.modelId
-        ? `${result.providerId || 'unknown provider'} • ${result.modelId}`
-        : 'No model information returned';
+      const modelDisplay = result.modelId
+        ? `${result.providerId || 'unknown'} • ${result.modelId}`
+        : 'No model info';
+      newSelectedModels[columnIndex] = modelDisplay;
       setSelectedModels(newSelectedModels);
-
-      // Update global current model display
-      setCurrentModelDisplay(
-        result.modelId
-          ? `${result.providerId || 'unknown provider'} • ${result.modelId}`
-          : 'No model information returned'
-      );
+      setCurrentModelDisplay(modelDisplay);
     } catch (error) {
       console.error('Generation failed:', error);
       const newValues = [...editorValues];
-      const separator = '\n\n--- Error ---\n';
-      newValues[columnIndex] = editorValue + separator + `❌ Error: ${error}`;
+      newValues[columnIndex] += `\n\n--- Error ---\n❌ Error: ${error}`;
       setEditorValues(newValues);
-
       const newSelectedModels = [...selectedModels];
       newSelectedModels[columnIndex] = 'Model selection failed';
       setSelectedModels(newSelectedModels);
-
-      // Update global current model display on failure
       setCurrentModelDisplay('Generation failed');
     } finally {
       const updatedGenerating = [...isGenerating];
@@ -315,113 +273,57 @@ export default function MonacoSharedMultiPage() {
     }
   };
 
-  // Generation function using the correct tRPC format
   const generateWithLLM = async (
     prompt: string,
     role: Role
   ): Promise<GenerationResult> => {
-    try {
-      console.log('🚀 Starting generation...', {
-        prompt: prompt.substring(0, 100) + '...',
-        role: role.title,
-        parameters: role.parameters,
-      });
+    const requestBody = {
+      prompt,
+      systemPrompt: role.prompt || 'You are a helpful assistant.',
+      temperature: 0.7,
+      maxTokens: 2000,
+      modelCriteria: {
+        minContext: role.parameters.minContext,
+        maxContext: role.parameters.maxContext,
+        toolCalling: role.parameters.hasTools,
+        vision: role.parameters.vision,
+        reasoning: role.parameters.hasTools,
+        embedding: role.parameters.embed,
+      },
+    };
 
-      const requestBody = {
-        prompt: prompt,
-        systemPrompt: role.prompt || 'You are a helpful assistant.',
-        temperature: 0.7,
-        maxTokens: 2000,
-        modelCriteria: {
-          minContext: role.parameters.minContext,
-          maxContext: role.parameters.maxContext,
-          toolCalling: role.parameters.hasTools,
-          vision: role.parameters.vision,
-          reasoning: role.parameters.hasTools, // Map hasTools to reasoning for now
-          embedding: role.parameters.embed,
-        },
-      };
+    const response = await fetch('/api/trpc/generateContent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    });
 
-      console.log('📤 Request body:', JSON.stringify(requestBody, null, 2));
-      console.log('🌐 Making API call to: /api/trpc/generateContent');
-
-      // Use simple non-batch format that works
-      const response = await fetch('/api/trpc/generateContent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      console.log('📥 Response status:', response.status);
-      console.log(
-        '📥 Response headers:',
-        Object.fromEntries(response.headers.entries())
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ API call failed:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorBody: errorText,
-        });
-        throw new Error(`API call failed (${response.status}): ${errorText}`);
-      }
-
-      const responseText = await response.text();
-      console.log('📄 Raw response text:', responseText);
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-        console.log('📊 Parsed response data:', data);
-      } catch (parseError) {
-        console.error('❌ Failed to parse response as JSON:', parseError);
-        throw new Error(`Invalid JSON response: ${responseText}`);
-      }
-
-      // Check if there's an error in the response
-      if (data.error) {
-        console.error('❌ API returned error:', data.error);
-        throw new Error(`API Error: ${data.error.message}`);
-      }
-
-      const actualResult = data.result?.data || data.result || data;
-      console.log('✅ Final result:', actualResult);
-
-      console.log('✅ Generation successful:', {
-        model: actualResult.modelId,
-        provider: actualResult.providerId,
-        contentLength: actualResult.content?.length,
-      });
-
-      return {
-        text:
-          actualResult.content ||
-          actualResult.response ||
-          'No content generated',
-        modelId: actualResult.modelId || actualResult.model,
-        providerId: actualResult.providerId,
-      };
-    } catch (error) {
-      console.error('❌ Generation failed:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      return { text: `❌ Error: ${errorMsg}` };
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API call failed (${response.status}): ${errorText}`);
     }
+
+    const data = await response.json();
+    if (data.error) throw new Error(`API Error: ${data.error.message}`);
+
+    const actualResult = data.result?.data || data.result || data;
+    return {
+      text: actualResult.content || 'No content generated',
+      modelId: actualResult.modelId || actualResult.model,
+      providerId: actualResult.providerId,
+    };
   };
 
   const clearEditor = (columnIndex: number) => {
     const newValues = [...editorValues];
     newValues[columnIndex] = '';
     setEditorValues(newValues);
-
     const newSelectedModels = [...selectedModels];
     newSelectedModels[columnIndex] = '';
     setSelectedModels(newSelectedModels);
   };
 
+  // --- Render ---
   return (
     <div
       style={{
@@ -432,9 +334,8 @@ export default function MonacoSharedMultiPage() {
         minHeight: '100vh',
       }}
     >
-      <h1>🎭 Multi-Shared Monaco Workspace with Role Manager</h1>
+      <h1>🎭 DoMoreCo Workspace with MCP</h1>
 
-      {/* Current Model Display */}
       <div
         style={{
           background: '#1a1a1a',
@@ -449,7 +350,6 @@ export default function MonacoSharedMultiPage() {
         <strong>Current Model:</strong> {currentModelDisplay}
       </div>
 
-      {/* Compact Role Manager */}
       <div
         style={{
           border: '1px solid #333',
@@ -461,7 +361,6 @@ export default function MonacoSharedMultiPage() {
       >
         <h2>Role Manager</h2>
 
-        {/* API Status */}
         <div
           style={{
             background: apiStatus.includes('✅') ? '#1a4d3a' : '#4d1a1a',
@@ -503,11 +402,11 @@ export default function MonacoSharedMultiPage() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: '1fr 1fr auto',
             gap: '15px',
           }}
         >
-          {/* Current Role Editor */}
+          {/* Role Editor */}
           <div>
             <div style={{ marginBottom: '10px' }}>
               <input
@@ -528,7 +427,6 @@ export default function MonacoSharedMultiPage() {
                 }}
               />
             </div>
-
             <div style={{ marginBottom: '10px' }}>
               <textarea
                 value={currentRole.prompt}
@@ -549,7 +447,6 @@ export default function MonacoSharedMultiPage() {
                 }}
               />
             </div>
-
             <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
               <input
                 type="number"
@@ -592,7 +489,6 @@ export default function MonacoSharedMultiPage() {
                 }}
               />
             </div>
-
             <div
               style={{
                 display: 'flex',
@@ -636,7 +532,6 @@ export default function MonacoSharedMultiPage() {
                 Embed
               </label>
             </div>
-
             <button
               onClick={saveRole}
               style={{
@@ -655,7 +550,6 @@ export default function MonacoSharedMultiPage() {
 
           {/* Stats and Saved Roles */}
           <div>
-            {/* Model Stats */}
             <div style={{ marginBottom: '15px' }}>
               <h3 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>
                 Model Stats
@@ -665,21 +559,18 @@ export default function MonacoSharedMultiPage() {
                   <strong>{modelStats.matching}</strong> / {modelStats.total}{' '}
                   models match
                 </div>
-                {Object.keys(modelStats.byProvider).length > 0 &&
-                  Object.entries(modelStats.byProvider).map(
-                    ([provider, count]) => (
-                      <div
-                        key={provider}
-                        style={{ fontSize: '10px', color: '#aaa' }}
-                      >
-                        {provider}: {count}
-                      </div>
-                    )
-                  )}
+                {Object.entries(modelStats.byProvider).map(
+                  ([provider, count]) => (
+                    <div
+                      key={provider}
+                      style={{ fontSize: '10px', color: '#aaa' }}
+                    >
+                      {provider}: {count}
+                    </div>
+                  )
+                )}
               </div>
             </div>
-
-            {/* Saved Roles */}
             <div>
               <h3 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>
                 Saved Roles
@@ -735,10 +626,13 @@ export default function MonacoSharedMultiPage() {
               </div>
             </div>
           </div>
+
+          {/* MCP Tool Selector */}
+          <RoleMcpSelector key={currentRole.id} roleId={currentRole.id} />
         </div>
       </div>
 
-      {/* 8-Column Shared Monaco Workspace */}
+      {/* 8-Column Workspace */}
       <div
         style={{
           display: 'grid',
@@ -811,7 +705,6 @@ export default function MonacoSharedMultiPage() {
                 </div>
               </div>
 
-              {/* Role Assignment */}
               <div
                 style={{
                   display: 'flex',
@@ -872,6 +765,11 @@ export default function MonacoSharedMultiPage() {
             />
           </div>
         ))}
+      </div>
+
+      {/* MCP Server Manager at the bottom */}
+      <div style={{ marginTop: '40px' }}>
+        <McpServerManager />
       </div>
     </div>
   );

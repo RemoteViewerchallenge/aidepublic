@@ -1,61 +1,154 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-// Pure Monaco Editor test without any external dependencies
-export default function PureMonacoPage() {
-  const [isClient, setIsClient] = useState(false);
-  const [editorStatus, setEditorStatus] = useState('Initializing...');
-  const [editorValue, setEditorValue] = useState(`// Pure Monaco Editor Test
-function hello() {
-  console.log("Hello from Pure Monaco Editor!");
-  return "Monaco is working without any dependencies!";
+interface Model {
+  id: string;
+  name: string;
+  apiProvider: 'openrouter' | 'google' | 'aistudio';
+  isFree: boolean;
 }
 
-// Try editing this code
-const greeting = "Pure Monaco Editor is awesome!";
-console.log(greeting);
+export default function PureMonacoPage() {
+  const [isClient, setIsClient] = useState(false);
+  const [MonacoEditor, setMonacoEditor] = useState<any>(null);
+  const [status, setStatus] = useState('Initializing...');
 
-hello();
+  const [prompt, setPrompt] = useState('// Write your prompt here...\n');
+  const [generatedText, setGeneratedText] = useState(
+    '// AI-generated text will appear here.'
+  );
 
-// Test autocomplete by typing: console.`);
+  const [models, setModels] = useState<Model[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string>('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    setEditorStatus('Ready for Monaco initialization...');
   }, []);
 
-  const [MonacoEditor, setMonacoEditor] = useState<any>(null);
-
   useEffect(() => {
-    if (isClient) {
-      // Dynamically import Monaco Editor only on the client side
+    if (isClient && !MonacoEditor) {
       import('@monaco-editor/react')
         .then(module => {
           setMonacoEditor(() => module.Editor);
-          setEditorStatus('Monaco Editor module loaded successfully');
+          setStatus('Monaco Editor module loaded. Fetching models...');
+          fetchModels();
         })
         .catch(error => {
           console.error('Failed to load Monaco Editor:', error);
-          setEditorStatus('❌ Failed to load Monaco Editor');
+          setStatus('❌ Failed to load Monaco Editor');
         });
     }
-  }, [isClient]);
+    // The fetchModels function is defined below and doesn't need to be in the dependency array
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isClient, MonacoEditor]);
+
+  const fetchModels = async () => {
+    try {
+      const response = await fetch('/api/trpc/getModelsFromDatabase');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      // tRPC responses can be an array, so we handle that case
+      const result = (Array.isArray(data) ? data[0] : data).result.data.map((m: any) => ({...m, apiProvider: m.provider}));
+      setModels(result);
+      setStatus(`✅ Ready. Found ${result.length} models.`);
+      if (result.length > 0) {
+        setSelectedModel(result[0].id);
+      }
+    } catch (error) {
+      console.error('Failed to fetch models:', error);
+      setStatus('❌ Failed to fetch models from API.');
+    }
+  };
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    setStatus('⏳ Syncing models with providers...');
+    try {
+      const response = await fetch('/api/trpc/model.syncModelsWithProviders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API Error (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      const result = (Array.isArray(data) ? data[0] : data).result.data;
+
+      setStatus(
+        `✅ Sync complete! Found ${result.aiStudioCount + result.openRouterCount} models. Refreshing list...`
+      );
+      // After a successful sync, re-fetch the models to update the dropdown
+      await fetchModels();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setStatus(`❌ Sync failed: ${errorMessage}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleGenerate = async () => {
+    if (!prompt.trim() || !selectedModel) {
+      setStatus('⚠️ Please enter a prompt and select a model.');
+      return;
+    }
+
+    const model = models.find(m => m.id === selectedModel);
+    if (!model) {
+      setStatus('❌ Selected model not found.');
+      return;
+    }
+
+    setIsGenerating(true);
+    setStatus(`⏳ Generating with ${model.name}...`);
+
+    try {
+      const response = await fetch('/api/trpc/bareBones.generateBareBones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          modelId: model.id,
+          providerId: model.apiProvider,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `API Error (${response.status}): ${errorText || 'Unknown error'}`
+        );
+      }
+
+      const data = await response.json();
+      const result = (Array.isArray(data) ? data[0] : data).result.data;
+
+      setGeneratedText(result.content);
+      setStatus(`✅ Generation complete with ${result.modelId}.`);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error('Generation failed:', error);
+      setGeneratedText(`// Generation failed:\n${errorMessage}`);
+      setStatus('❌ Generation failed.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   if (!isClient) {
     return (
       <div style={{ padding: '20px' }}>
-        <h1>🎮 Pure Monaco Editor Test</h1>
-        <div
-          style={{
-            padding: '40px',
-            textAlign: 'center',
-            border: '1px solid #ccc',
-            borderRadius: '8px',
-          }}
-        >
-          ⏳ Initializing client-side rendering...
-        </div>
+        <h1>Bare Bones Monaco Page</h1>
+        <p>⏳ Initializing client-side rendering...</p>
       </div>
     );
   }
@@ -63,154 +156,85 @@ hello();
   if (!MonacoEditor) {
     return (
       <div style={{ padding: '20px' }}>
-        <h1>🎮 Pure Monaco Editor Test</h1>
-
-        <div
-          style={{
-            marginBottom: '15px',
-            padding: '10px',
-            background: '#e8f4f8',
-            borderRadius: '4px',
-          }}
-        >
-          <strong>Status:</strong> {editorStatus}
-        </div>
-
-        <div
-          style={{
-            height: '400px',
-            width: '100%',
-            border: '1px solid #ccc',
-            borderRadius: '8px',
-            overflow: 'hidden',
-            marginBottom: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: '#f9f9f9',
-          }}
-        >
-          🔄 Loading Monaco Editor...
-        </div>
-
-        <div>
-          <h3>🧪 Loading Monaco Editor...</h3>
-          <p>Please wait while we load the Monaco Editor component.</p>
-        </div>
+        <h1>Bare Bones Monaco Page</h1>
+        <p>{status}</p>
       </div>
     );
   }
 
   return (
     <div style={{ padding: '20px' }}>
-      <h1>🎮 Pure Monaco Editor Test</h1>
-      <p>
-        Testing Monaco Editor with zero external dependencies (no tRPC, no
-        providers):
-      </p>
+      <h1>Bare Bones Monaco Page</h1>
+      <p>Fetching models from the database. Sync with providers on demand.</p>
 
       <div
         style={{
           marginBottom: '15px',
           padding: '10px',
-          background: '#e8f4f8',
+          background: '#f0f0f0',
           borderRadius: '4px',
         }}
       >
-        <strong>Status:</strong> {editorStatus}
+        <strong>Status:</strong> {status}
       </div>
 
-      <div
-        style={{
-          height: '400px',
-          width: '100%',
-          border: '1px solid #ccc',
-          borderRadius: '8px',
-          overflow: 'hidden',
-          marginBottom: '20px',
-        }}
-      >
-        <MonacoEditor
-          height="400px"
-          defaultLanguage="javascript"
-          value={editorValue}
-          theme="vs-dark"
-          options={{
-            minimap: { enabled: true },
-            scrollBeyondLastLine: false,
-            fontSize: 14,
-            wordWrap: 'on',
-            automaticLayout: true,
-            lineNumbers: 'on',
-            folding: true,
-            matchBrackets: 'always',
-            bracketPairColorization: { enabled: true },
-            suggestOnTriggerCharacters: true,
-            acceptSuggestionOnCommitCharacter: true,
-            tabCompletion: 'on',
-          }}
-          onChange={value => {
-            setEditorValue(value || '');
-            console.log('✅ Editor content changed');
-          }}
-          onMount={(editor, monaco) => {
-            setEditorStatus('✅ Monaco Editor loaded and ready!');
-            console.log('✅ Monaco Editor mounted successfully!', {
-              editor,
-              monaco,
-            });
-          }}
-          loading={
-            <div style={{ padding: '20px', textAlign: 'center' }}>
-              🔄 Initializing Monaco Editor...
-            </div>
-          }
-        />
+      <div style={{ marginBottom: '15px', display: 'flex', gap: '10px' }}>
+        <select
+          value={selectedModel}
+          onChange={e => setSelectedModel(e.target.value)}
+          disabled={models.length === 0 || isGenerating}
+          style={{ padding: '8px', flexGrow: 1 }}
+        >
+          {models.length === 0 ? (
+            <option>Loading models...</option>
+          ) : (
+            models.map(model => (
+              <option key={model.id} value={model.id}>
+                {`[${model.apiProvider}] ${model.name} ${
+                  model.isFree ? '(Free)' : ''
+                }`}
+              </option>
+            ))
+          )}
+        </select>
+        <button
+          onClick={handleSync}
+          disabled={isSyncing || isGenerating}
+          style={{ padding: '8px 16px', whiteSpace: 'nowrap' }}
+        >
+          {isSyncing ? '⏳ Syncing...' : '🔄 Sync Models'}
+        </button>
+        <button
+          onClick={handleGenerate}
+          disabled={isGenerating}
+          style={{ padding: '8px 16px' }}
+        >
+          {isGenerating ? '⏳ Generating...' : '🚀 Generate'}
+        </button>
       </div>
 
-      <div>
-        <h3>🧪 Features to test:</h3>
-        <ul style={{ lineHeight: '1.6' }}>
-          <li>✅ Syntax highlighting (JavaScript)</li>
-          <li>✅ Line numbers and folding</li>
-          <li>✅ Bracket matching and colorization</li>
-          <li>✅ Dark theme</li>
-          <li>✅ Minimap</li>
-          <li>✅ Word wrap</li>
-          <li>✅ Auto-complete (type &quot;console.&quot;)</li>
-          <li>✅ Pure implementation (no external dependencies)</li>
-          <li>✅ CSP compliant</li>
-        </ul>
-      </div>
-
-      <div
-        style={{
-          marginTop: '20px',
-          padding: '15px',
-          background: '#f5f5f5',
-          borderRadius: '8px',
-        }}
-      >
-        <h4>📊 Debug Information:</h4>
-        <p>
-          <strong>Client-side rendering:</strong>{' '}
-          {isClient ? '✅ Active' : '❌ Not ready'}
-        </p>
-        <p>
-          <strong>Editor status:</strong> {editorStatus}
-        </p>
-        <p>
-          <strong>Editor value length:</strong> {editorValue.length} characters
-        </p>
-        <p>
-          <strong>Monaco package:</strong> @monaco-editor/react@4.7.0
-        </p>
-        <p>
-          <strong>Loading method:</strong> Pure dynamic import (no dependencies)
-        </p>
-        <p>
-          <strong>Dependencies:</strong> None (tRPC-free)
-        </p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div>
+          <h3>Prompt</h3>
+          <MonacoEditor
+            height="60vh"
+            language="markdown"
+            theme="vs-dark"
+            value={prompt}
+            onChange={(value: string | undefined) => setPrompt(value || '')}
+            options={{ minimap: { enabled: false } }}
+          />
+        </div>
+        <div>
+          <h3>Generated Text</h3>
+          <MonacoEditor
+            height="60vh"
+            language="markdown"
+            theme="vs-dark"
+            value={generatedText}
+            options={{ readOnly: true, minimap: { enabled: false } }}
+          />
+        </div>
       </div>
     </div>
   );

@@ -1,67 +1,31 @@
-// my-app/app/api/trpc/[trpc]/route.ts
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
+/**
+ * This file is the tRPC API endpoint for the Next.js app.
+ * It proxies all requests from `/api/trpc/*` to the backend tRPC server.
+ */
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import type { NextRequest } from 'next/server';
 
-const handler = async (
-  req: Request,
-  { params }: { params: Promise<{ trpc: string }> }
-) => {
-  const { trpc } = await params;
-  const url = new URL(req.url);
-  const backendUrl = `${BACKEND_URL}/api/trpc/${trpc}${url.search}`;
+const handler = (req: NextRequest) => {
+  // The NEXT_PUBLIC_API_URL should point to your backend tRPC server.
+  // e.g., http://localhost:3000/api/trpc
+  const apiEndpoint = process.env.NEXT_PUBLIC_API_URL;
 
-  console.log('🔀 API Proxy:', {
+  if (!apiEndpoint) {
+    console.error('❌ NEXT_PUBLIC_API_URL is not set!');
+    return new Response(
+      JSON.stringify({
+        error: { message: 'API endpoint not configured on the server.' },
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Forward the request to the backend tRPC server
+  return fetch(`${apiEndpoint}${req.nextUrl.pathname}`, {
     method: req.method,
-    endpoint: trpc,
-    frontendUrl: req.url,
-    backendUrl: backendUrl,
-    searchParams: url.search,
+    headers: req.headers,
+    body: req.body,
   });
-
-  const body = req.method === 'POST' ? await req.text() : undefined;
-
-  if (body) {
-    console.log('📤 Proxying request body:', body);
-  }
-
-  try {
-    const forwardHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    const incomingHeaders = req.headers;
-    const AUTH_HEADER = 'authorization';
-    if (incomingHeaders.has(AUTH_HEADER)) {
-      forwardHeaders[AUTH_HEADER] = incomingHeaders.get(AUTH_HEADER) ?? '';
-    }
-
-    const response = await fetch(backendUrl, {
-      method: req.method,
-      headers: forwardHeaders,
-      body,
-    });
-
-    console.log('📥 Backend response:', {
-      status: response.status,
-      statusText: response.statusText,
-      url: backendUrl,
-    });
-
-    const data = await response.text();
-    console.log('📄 Backend response body:', data);
-
-    return new Response(data, {
-      status: response.status,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-  } catch (error) {
-    console.error('❌ Proxy error:', error);
-    return new Response(JSON.stringify({ error: `Proxy failed: ${error}` }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
 };
 
 export { handler as GET, handler as POST };

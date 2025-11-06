@@ -13,38 +13,16 @@ sleep 2
 
 # Start backend server
 # Resolve repository root early so subsequent paths are correct
-REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
-BACKEND_DIR="$REPO_ROOT"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+BACKEND_DIR="$REPO_ROOT/backend"
 # Prefer repo-relative frontend folder; fall back to legacy path if present
-FRONTEND_DIR="$REPO_ROOT/frontend/my-app"
-if [ ! -d "$FRONTEND_DIR" ] && [ -d "$REPO_ROOT/my-app" ]; then
-	FRONTEND_DIR="$REPO_ROOT/my-app"
+FRONTEND_DIR="$REPO_ROOT/frontend"
+if [ ! -d "$FRONTEND_DIR" ]; then
+	echo "⚠️ Frontend directory not found at $FRONTEND_DIR"
 fi
 
-# Optionally run model syncs on startup (can be skipped by setting SKIP_MODEL_SYNC=1)
-if [ -z "$SKIP_MODEL_SYNC" ]; then
-	echo "🔁 Running model synchronization scripts before startup..."
-	# Ensure we run the script from the repository root so relative paths resolve
-	if command -v npx >/dev/null 2>&1; then
-		# Prefer backend script if present (project stores scripts under backend/src/scripts)
-		if [ -f "$REPO_ROOT/backend/src/scripts/sync-models.ts" ]; then
-			(cd "$REPO_ROOT" && npx tsx backend/src/scripts/sync-models.ts) || echo "sync-models failed"
-		elif [ -f "$REPO_ROOT/src/scripts/sync-models.ts" ]; then
-			(cd "$REPO_ROOT" && npx tsx src/scripts/sync-models.ts) || echo "sync-models failed"
-		else
-			echo "⚠️ sync-models script not found in backend/src/scripts or src/scripts"
-		fi
-	else
-		# fallback: try node to run JS transpiled output if available (from repo root)
-		if [ -f "$REPO_ROOT/dist/src/scripts/sync-models.js" ]; then
-			node "$REPO_ROOT/dist/src/scripts/sync-models.js" || echo "sync-models failed"
-		else
-			echo "⚠️ Could not run sync-models: npx not found and dist script missing"
-		fi
-	fi
-else
-	echo "⏭️ SKIP_MODEL_SYNC set, skipping model synchronization"
-fi
+# Model synchronization now runs automatically inside the backend server on startup.
+# See /tmp/domore-backend.log for details and model counts.
 
 # Ensure proxy is running (expected at :9090)
 PROXY_HEALTH_URL="http://localhost:9090/"
@@ -72,7 +50,7 @@ fi
 echo "📡 Starting backend server on port 3000..."
 # Run backend directly with tsx pointing at the backend source path (repo uses backend/src/...)
 if command -v npx >/dev/null 2>&1; then
-	(cd "$REPO_ROOT" && npx tsx watch backend/src/server/index.ts >/tmp/domore-backend.log 2>&1) &
+	(cd "$REPO_ROOT" && npx tsx watch --ignore 'state/**' backend/src/server/index.ts >/tmp/domore-backend.log 2>&1) &
 else
 	# fallback to npm script if npx not available
 	(cd "$BACKEND_DIR" && npm run dev >/tmp/domore-backend.log 2>&1) &

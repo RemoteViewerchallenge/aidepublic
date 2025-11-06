@@ -1,5 +1,5 @@
 1 — Purpose and summary (what this repo / MCP system is)
-This workspace contains an MC P (Model Context/Tool) adapter and a small orchestration stack that aims to:
+This workspace contains an MCP (Model Context/Tool) adapter and a small orchestration stack that aims to:
 
 Expose model/tooling adapters (Lootbox-style stdio adapter bundled for MCP) and present them via an HTTP proxy (mcp-proxy-master).
 Provide a UI to create and manage "roles" and assign tools to roles (roles are parameterized assistant profiles, not models).
@@ -19,7 +19,7 @@ generateContent — main generation endpoint. It chooses a model via ModelSelect
 getAvailableModels, getModelsFromDatabase, getBestModelForTask — model discovery and selection helpers.
 ProviderManager.ts — manages provider adapters, health checks, model cache, and provider cooldowns. Has new cooldown tracking: markProviderCooldown(id, ms).
 ModelSelector.ts — picks models from DB based on criteria. Now accepts excludedModelIds to avoid session-blacklisted models.
-sync-models.ts — synchronizes models into the models table. Currently reads AI Studio via API (if key), and OpenRouter from the raw JSON file openrouter-models-raw.json. (We will change raw-file to live API — recommended.)
+sync-models.ts — synchronizes models into the models table. Currently reads AI Studio via API (if key), and 
 sync-aistudio-models.ts — duplicate AI Studio sync (can be consolidated).
 server.cjs — simple roles persistence API (GET/POST/PUT). Stores roles and assignments in store.json.
 page.tsx — new workspace page with:

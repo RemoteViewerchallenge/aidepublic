@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import React from 'react';
 import { useEffect, useState } from 'react';
 
 // Dynamically import Monaco Editor with proper local configuration

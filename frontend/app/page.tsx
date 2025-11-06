@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import * as React from 'react';
 
 export default function HomePage() {
   return (
@@ -34,6 +35,15 @@ export default function HomePage() {
             >
               🎭 <strong>Multi-Shared Monaco Workspace</strong> - 8 shared
               editors with role management
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/domoreco"
+              style={{ color: '#007acc', textDecoration: 'none' }}
+            >
+              <strong>DoMoreCo Workspace</strong> - New workspace with MCP
+              tool selection
             </Link>
           </li>
           <li>
