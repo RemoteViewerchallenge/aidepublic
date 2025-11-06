@@ -38,7 +38,7 @@ describeIf('OpenRouterAdapter (Integration)', () => {
     const response = await adapter.executeChatCompletion({
       // Use a known free model on OpenRouter for testing
       model: 'mistralai/mistral-7b-instruct:free',
-      messages: [{ role: 'user', content: 'Hello!' }],
+      messages: [{ role: 'user', content: 'Say "Hello!"' }],
     });
     expect(response.choices[0].message.content).toBeTruthy();
     expect(response.usage.totalTokens).toBeGreaterThan(0);

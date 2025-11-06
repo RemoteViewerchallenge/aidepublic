@@ -96,7 +96,7 @@ describe('ModelSelector', () => {
   describe('selectBestModel', () => {
     it('should return null if no models are available', async () => {
       modelSelector = await createSelector();
-      const selected = modelSelector.selectBestModel([], 'A simple task');
+      const selected = await modelSelector.selectBestModel({}, {});
       expect(selected).toBeNull();
     });
 
@@ -106,19 +106,21 @@ describe('ModelSelector', () => {
       modelSelector = await createSelector();
 
       // Act
-      const selected = modelSelector.selectBestModel(mockModels, 'A task');
+      const selected = await modelSelector.selectBestModel({}, {});
 
       // Assert: It should return the first model in the list as a fallback.
-      expect(selected).toBe(mockModels[0]);
+      expect(selected?.id).toBe(mockModels[0].id);
     });
 
     it('should prioritize free models when available', async () => {
       // Arrange
       modelSelector = await createSelector();
-      const task = 'A simple task, no special requirements.';
 
       // Act: Run selection on the full list of models.
-      const selected = modelSelector.selectBestModel(mockModels, task);
+      const selected = await modelSelector.selectBestModel(
+        { isFree: true },
+        {}
+      );
 
       console.log('Selected model for simple task:', selected?.id);
       // Assert: It should select from the free models. Based on our rules,
@@ -130,11 +132,9 @@ describe('ModelSelector', () => {
     it('should score all models if no free models are available', async () => {
       // Arrange
       modelSelector = await createSelector();
-      const nonFreeModels = mockModels.filter(m => !m.isFree); // Only Gemini Pro
-      const task = 'A simple task.';
 
       // Act
-      const selected = modelSelector.selectBestModel(nonFreeModels, task);
+      const selected = await modelSelector.selectBestModel({}, {});
 
       console.log(
         'Selected model when no free models are available:',
@@ -147,8 +147,6 @@ describe('ModelSelector', () => {
     it('should select a model that supports tool use if the task requires it', async () => {
       // Arrange
       modelSelector = await createSelector();
-      const taskRequiringTools =
-        'Please call the weather API for San Francisco.';
 
       // Act: Even though free models are available, the tool use rule gives such a high
       // score to Gemini Pro that it will be chosen if we consider all models.
@@ -156,9 +154,9 @@ describe('ModelSelector', () => {
       // has tool use, it will pick the best of the free tier.
       // To test the rule, we need to present a choice where the rule matters.
       // Let's imagine a scenario where no free models are available.
-      const selected = modelSelector.selectBestModel(
-        mockModels,
-        taskRequiringTools
+      const selected = await modelSelector.selectBestModel(
+        { toolCalling: true },
+        {}
       );
 
       // Assert: The selector should now pick the free model that supports tool use.

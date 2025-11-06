@@ -13,6 +13,7 @@
 // have access to the environment variables from the .env file.
 import 'dotenv/config';
  
+// eslint-disable-next-line import/order
 import type { Server } from 'http';
 
 import logger from '../utils/logger.js';

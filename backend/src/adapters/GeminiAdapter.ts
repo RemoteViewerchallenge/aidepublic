@@ -12,17 +12,17 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-import { ProviderError } from '../core/customErrors';
+import { ProviderError } from '../core/customErrors.js';
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
   Model,
-  ProviderId,
-} from '../types/provider';
-import { getEnv } from '../utils/env';
-import { createModuleLogger } from '../utils/logger';
+  ProviderId, // .js
+} from '../types/provider.js';
+import { getEnv } from '../utils/env.js';
+import { createModuleLogger } from '../utils/logger.js';
 
-import type { ProviderAdapter } from './BaseProviderAdapter';
+import type { ProviderAdapter } from './BaseProviderAdapter.js';
 
 const logger = createModuleLogger('GeminiAdapter');
 

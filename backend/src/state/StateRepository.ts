@@ -32,8 +32,10 @@ export class StateRepository {
   private baseDir: string;
 
   constructor(relativeBaseDir: string = 'state') {
-    // Resolve path from the project root. This is robust for a Node.js application.
-    this.baseDir = path.resolve(process.cwd(), relativeBaseDir);
+    // Resolve path from the project root. The start scripts ensure `process.cwd()`
+    // is the repository root, making this reliable.
+    const projectRoot = process.cwd();
+    this.baseDir = path.join(projectRoot, 'backend', relativeBaseDir);
   }
 
   async writeJson<T>(filePath: string, data: T): Promise<void> {

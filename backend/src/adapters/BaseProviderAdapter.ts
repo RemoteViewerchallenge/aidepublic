@@ -12,7 +12,7 @@
  */
 
 import type {
-  ChatCompletionRequest,
+ ChatCompletionRequest,
   ChatCompletionResponse,
   Model,
   ProviderId,

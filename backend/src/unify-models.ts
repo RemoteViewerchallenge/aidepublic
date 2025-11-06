@@ -1,5 +1,6 @@
-import 'dotenv/config';
+import './config.js'; // This MUST be the first import
 
+// eslint-disable-next-line import/order
 import pool from '../../db/index.js';
 
 async function unifyModels() {
@@ -7,6 +8,22 @@ async function unifyModels() {
   let client;
   try {
     client = await pool.connect();
+
+    // --- Schema Validation ---
+    // Check if the 'is_free' column exists and add it if it doesn't.
+    // This makes the script resilient to database schema changes.
+    const colCheck = await client.query(`
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_name='models' AND column_name='is_free'
+    `);
+
+    if (colCheck.rowCount === 0) {
+      console.log('Adding "is_free" column to "models" table...');
+      await client.query(
+        'ALTER TABLE models ADD COLUMN is_free BOOLEAN NOT NULL DEFAULT false'
+      );
+    }
+
     await client.query('BEGIN');
 
     // Truncate the unified models table
@@ -37,8 +54,8 @@ async function unifyModels() {
         model.supportedGenerationMethods?.includes('toolUse');
 
       await client.query(
-        `INSERT INTO models (id, provider, name, description, context_length, tool_calling, vision, reasoning, embedding, raw_data)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        `INSERT INTO models (id, provider, name, description, context_length, tool_calling, vision, reasoning, embedding, raw_data, is_free)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [
           model.id,
           'aistudio',
@@ -50,6 +67,7 @@ async function unifyModels() {
           hasThinking,
           hasEmbedding,
           model,
+          true, // All AI Studio models are considered free tier
         ]
       );
     }
@@ -79,9 +97,26 @@ async function unifyModels() {
         model.supported_parameters?.includes('tools') ||
         model.supported_parameters?.includes('functions');
 
+      // Determine if the model is free based on pricing or name
+      let isPricingFree = false;
+      // Defensively check the pricing object. This is the "0,0,0,0" check you liked.
+      if (model.raw_data && typeof model.raw_data.pricing === 'object') {
+        const pricing = model.raw_data.pricing;
+        // Ensure that if prompt or completion prices exist, they are zero.
+        // If they don't exist, we don't consider it free based on pricing.
+        const promptPrice = parseFloat(pricing.prompt || '1');
+        const completionPrice = parseFloat(pricing.completion || '1');
+        isPricingFree = promptPrice === 0 && completionPrice === 0;
+      }
+
+      const isNameFree =
+        typeof model.id === 'string' &&
+        model.id.toLowerCase().endsWith(':free');
+      const isFree = isPricingFree || isNameFree;
+
       await client.query(
-        `INSERT INTO models (id, provider, name, description, context_length, tool_calling, vision, reasoning, embedding, raw_data)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        `INSERT INTO models (id, provider, name, description, context_length, tool_calling, vision, reasoning, embedding, raw_data, is_free)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [
           model.id,
           'openrouter',
@@ -92,7 +127,8 @@ async function unifyModels() {
           hasVision,
           hasThinking,
           hasEmbedding,
-          model,
+          model.raw_data, // Use the original raw_data, not the whole row
+          isFree,
         ]
       );
     }

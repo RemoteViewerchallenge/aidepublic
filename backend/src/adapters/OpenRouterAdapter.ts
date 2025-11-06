@@ -9,17 +9,17 @@
  * - `class OpenRouterAdapter`: The concrete class that implements the `ProviderAdapter` interface for OpenRouter.
  */
 
-import { ApiError, ProviderError } from '../core/customErrors';
+import { ApiError, ProviderError } from '../core/customErrors.js';
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
   Model,
   ProviderId,
-} from '../types/provider';
-import { getEnv } from '../utils/env';
-import { createModuleLogger } from '../utils/logger';
+} from '../types/provider.js';
+import { getEnv } from '../utils/env.js';
+import { createModuleLogger } from '../utils/logger.js';
 
-import type { ProviderAdapter } from './BaseProviderAdapter';
+import type { ProviderAdapter } from './BaseProviderAdapter.js';
 
 const logger = createModuleLogger('OpenRouterAdapter');
 
@@ -119,29 +119,6 @@ export class OpenRouterAdapter implements ProviderAdapter {
       });
       const responseData = (await response.json()) as OpenRouterModelsResponse;
 
-      // --- For debugging: Save the raw API response to a file ---
-      try {
-        const fs = await import('fs/promises');
-        const path = await import('path');
-        const outputPath = path.resolve(
-          process.cwd(),
-          'data',
-          'openrouter-models-raw.json'
-        );
-        await fs.mkdir(path.dirname(outputPath), { recursive: true });
-        await fs.writeFile(outputPath, JSON.stringify(responseData, null, 2));
-        logger.info(
-          { method: 'fetchAvailableModels', path: outputPath },
-          'Successfully saved raw OpenRouter models response to file.' as string
-        );
-      } catch (writeError) {
-        logger.error(
-          { method: 'fetchAvailableModels', error: writeError },
-          'Failed to save raw OpenRouter models response.' as string
-        );
-      }
-      // --- End debugging code ---
-
       const models = responseData.data.map((m: Record<string, any>) => {
         const isFree = m.pricing
           ? Object.values(m.pricing).every(price => price === '0')
@@ -152,7 +129,7 @@ export class OpenRouterAdapter implements ProviderAdapter {
           id: m.id,
           name: m.name,
           apiProvider: this.id,
-          sourceProvider: m.id.split('/'),
+          sourceProvider: m.id.split('/')[0] || 'unknown',
           contextWindow: m.context_length || m.max_context_length,
           isFree,
           supportsToolUse:
