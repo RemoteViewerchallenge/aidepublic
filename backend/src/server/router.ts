@@ -11,7 +11,7 @@
  * - `type AppRouter`: The exported type of the router, used by the client for type safety.
  */
 
-import { initTRPC, TRPCError } from '@trpc/server';
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 // import { agent } from 'volcano-sdk';
@@ -26,6 +26,7 @@ import { ProviderManager } from '../core/ProviderManager';
 import { StateRepository } from '../state/StateRepository';
 import { getEnv } from '../utils/env';
 import { mcpRouter } from './mcp/mcp';
+import { router, publicProcedure } from './trpc';
 
 // --- Application Composition Root ---
 // This is where we instantiate and wire together all the core components of our application.
@@ -49,14 +50,12 @@ const arbitrageEngineAdapter = new ArbitrageEngineAdapter(
 // providerManager.initialize();
 // --- End Composition Root ---
 
-const t = initTRPC.create();
-
-export const appRouter = t.router({
+export const appRouter = router({
   /**
    * The primary procedure to find the best available free model for a given task.
    * This demonstrates the end-to-end flow of our system.
    */
-  getBestModelForTask: t.procedure
+  getBestModelForTask: publicProcedure
     .input(
       // Use Zod for input validation, as per code_rules.md
       z.object({
@@ -136,7 +135,7 @@ export const appRouter = t.router({
    * Generate content using the best available model for the task.
    * This is the main generation endpoint that your frontend will use.
    */
-  generateContent: t.procedure
+  generateContent: publicProcedure
     .input(
       z.object({
         prompt: z.string().min(1),
@@ -429,7 +428,7 @@ export const appRouter = t.router({
   /**
    * Get all available models with their current health status.
    */
-  getAvailableModels: t.procedure.query(async () => {
+  getAvailableModels: publicProcedure.query(async () => {
     const models = await providerManager.getAvailableModels();
     return models.map(model => ({
       id: model.id,
@@ -449,7 +448,7 @@ export const appRouter = t.router({
    * This is the new preferred method for getting model data.
    * Returns ALL AI Studio models + FREE OpenRouter models.
    */
-  getModelsFromDatabase: t.procedure.query(async () => {
+  getModelsFromDatabase: publicProcedure.query(async () => {
     try {
       // Import the pool here to avoid circular dependencies
       const { default: pool } = await import('../../../db/index.js');
@@ -495,7 +494,7 @@ export const appRouter = t.router({
   /**_
    * Runs a simple, single-step agent workflow to verify end-to-end integration.
    */
-  // runAgentTask: t.procedure
+  // runAgentTask: publicProcedure
   //   .input(z.object({ prompt: z.string().default('Confirm you are operational.') }))
   //   .mutation(async () => {
   //     // This procedure now correctly uses the Volcano agent with our custom engine.
@@ -517,7 +516,7 @@ export const appRouter = t.router({
    * A dedicated procedure to test the connection to the Shell MCP.
    * This bypasses the agent and model selection to directly test the tool integration.
    */
-  runShellCommand: t.procedure
+  runShellCommand: publicProcedure
     .input(
       z.object({ command: z.string().default('echo "Hello from the shell!"') })
     )
@@ -564,7 +563,7 @@ export const appRouter = t.router({
 
       return await response.json();
     }),
-  runOrchestration: t.procedure
+  runOrchestration: publicProcedure
     .input(
       z.object({
         roles: z
@@ -642,7 +641,7 @@ export const appRouter = t.router({
       }
     }),
 
-  getProviderStatus: t.procedure.query(() => {
+  getProviderStatus: publicProcedure.query(() => {
     return {
       gemini: new GeminiAdapter().isEnabled,
       openrouter: new OpenRouterAdapter().isEnabled,

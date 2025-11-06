@@ -1,23 +1,29 @@
 import { z } from 'zod';
-import { createRouter } from './trpc';
+import { router, publicProcedure } from './trpc';
+import { TRPCError } from '@trpc/server';
 
-export const mcpRouter = createRouter()
-  .query('getTools', {
-    input: z.object({
-      url: z.string().url(),
-    }),
-    async resolve({ input }) {
-      // In a real application, you would connect to the MCP server at the given URL,
-      // fetch its tool definitions, and return them.
-      // For now, we'll return some mock data.
-      if (input.url.includes('error')) {
-        throw new Error('Failed to connect to MCP server');
+export const mcpRouter = router({
+  getTools: publicProcedure
+    .input(
+      z.object({
+        url: z.string().url(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const response = await fetch(input.url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        // Assuming the MCP server returns a list of tools in the format { id, name, description }
+        return data.tools;
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to fetch tools from MCP server at ${input.url}`,
+          cause: error,
+        });
       }
-
-      return [
-        { id: 'tool1', name: 'Calculator', description: 'Performs calculations.' },
-        { id: 'tool2', name: 'Weather', description: 'Gets the weather forecast.' },
-        { id: 'tool3', name: 'Stock Ticker', description: 'Gets the latest stock price.' },
-      ];
-    },
-  });
+    }),
+});
