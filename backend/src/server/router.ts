@@ -21,6 +21,7 @@ import { AIStudioAdapter } from '../adapters/AIStudioAdapter';
 import { GeminiAdapter } from '../adapters/GeminiAdapter';
 import { OpenRouterAdapter } from '../adapters/OpenRouterAdapter';
 import { ArbitrageEngineAdapter } from '../core/ArbitrageEngineAdapter';
+import { CodeModeManager } from '../core/CodeModeManager';
 import { ModelSelector } from '../core/ModelSelector';
 import { ProviderManager } from '../core/ProviderManager';
 import { StateRepository } from '../state/StateRepository';
@@ -42,6 +43,7 @@ const arbitrageEngineAdapter = new ArbitrageEngineAdapter(
   providerManager,
   modelSelector
 );
+const codeModeManager = new CodeModeManager();
 
 // Initialize the ProviderManager to start health checks and load state.
 // DISABLED: We use database-based model management instead of real-time API calls
@@ -512,56 +514,25 @@ export const appRouter = t.router({
   //     return { output: result };
   //   }),
 
-  /**
-   * A dedicated procedure to test the connection to the Shell MCP.
-   * This bypasses the agent and model selection to directly test the tool integration.
-   */
-  runShellCommand: t.procedure
+  runTool: t.procedure
     .input(
-      z.object({ command: z.string().default('echo "Hello from the shell!"') })
+      z.object({
+        toolName: z.string(),
+        args: z.record(z.any()).optional(),
+      })
     )
     .mutation(async ({ input }) => {
-      const shellMcpUrl = getEnv('SHELL_MCP_URL');
-      if (!shellMcpUrl) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'SHELL_MCP_URL is not configured in the environment.',
-        });
-      }
-
-      const requestBody = {
-        jsonrpc: '2.0',
-        method: 'run_tool',
-        params: { command: input.command },
-      };
-
-      let response: Response;
       try {
-        response = await fetch(shellMcpUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          body: JSON.stringify(requestBody),
-        });
-      } catch (_error: any) {
+        const tool = await codeModeManager.getTool(input.toolName);
+        const result = await tool.execute(input.args);
+        return { success: true, result };
+      } catch (error: any) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: `Failed to connect to Shell MCP at ${shellMcpUrl}. Reason: ${_error?.message}`,
-          cause: _error,
+          message: `Tool execution failed: ${error.message}`,
+          cause: error,
         });
       }
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: `Shell MCP request failed with status ${response.status}. Body: ${errorBody}`,
-        });
-      }
-
-      return await response.json();
     }),
   runOrchestration: t.procedure
     .input(
