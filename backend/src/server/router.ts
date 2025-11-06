@@ -14,9 +14,8 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-// import { agent } from 'volcano-sdk';
-import { createComplexOrchestration } from '../../volcano-sdk/src/orchestration-creator';
-import { agent } from '../../volcano-sdk/src/volcano-sdk';
+import { agent, createComplexOrchestration } from 'volcano-sdk';
+
 import { AIStudioAdapter } from '../adapters/AIStudioAdapter';
 import { GeminiAdapter } from '../adapters/GeminiAdapter';
 import { OpenRouterAdapter } from '../adapters/OpenRouterAdapter';

@@ -1,16 +1,19 @@
-import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk';
 import type { ChildProcess } from 'child_process';
 import { spawn } from 'child_process';
+
+import { mcp } from 'volcano-sdk';
 
 import { getEnv } from '../utils/env';
 import { CommanderServer } from './CommanderServer';
 import { RoleManager } from './RoleManager';
 
+import type { MCPAuthConfig } from 'volcano-sdk';
 interface McpConfig {
     id: string;
     name: string;
     start_command: string;
     install_path: string;
+    auth?: MCPAuthConfig;
 }
 
 export class CodeModeManager {
@@ -70,8 +73,8 @@ export class CodeModeManager {
             throw new Error(`Could not find port for running MCP server ${mcpId}`);
         }
 
-        const transport = new StreamableHTTPClientTransport(new URL(`http://localhost:${port}/mcp`));
-        const client = new Client({ transport });
+        const mcpConfig = this.mcpRegistry.find(c => c.id === mcpId);
+        const mcpHandle = mcp(`http://localhost:${port}/mcp`, { auth: mcpConfig?.auth });
 
         return {
             execute: async (args: any) => {
@@ -80,19 +83,11 @@ export class CodeModeManager {
                     throw new Error(`Access denied: ${permission.reason}`);
                 }
 
-                console.log(`Executing tool ${toolName} via mcp-proxy on port ${port} with args:`, args);
+                console.log(`Executing tool ${methodName} via Volcano SDK on port ${port} with args:`, args);
                 this.resetInactivityTimer(mcpId);
 
-                const response = await client.callTool(toolName, args);
-
-                if (response.content && response.content[0] && response.content[0].type === 'text') {
-                    try {
-                        return JSON.parse(response.content[0].text);
-                    } catch (e) {
-                        return response.content[0].text;
-                    }
-                }
-                return response;
+                // The SDK's callTool function returns the result directly.
+                return mcpHandle.callTool(methodName, args);
             }
         };
     }
