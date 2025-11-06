@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useState } from 'react';
 
 // Simple Monaco Editor component that doesn't depend on any external providers
@@ -81,11 +82,11 @@ hello();
           acceptSuggestionOnCommitCharacter: true,
           tabCompletion: 'on',
         }}
-        onChange={value => {
+        onChange={(value: any) => {
           setEditorValue(value || '');
           console.log('✅ Editor content changed');
         }}
-        onMount={(editor, monaco) => {
+        onMount={(editor: any, monaco: any) => {
           setEditorStatus('✅ Monaco Editor loaded and ready!');
           console.log('✅ Monaco Editor mounted successfully!', {
             editor,

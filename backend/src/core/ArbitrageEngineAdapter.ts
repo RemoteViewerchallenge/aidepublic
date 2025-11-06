@@ -29,8 +29,8 @@
 
 import { createModuleLogger } from '../utils/logger';
 
-import type { ModelSelector } from './ModelSelector';
-import type { ProviderManager } from './ProviderManager';
+import type { ModelSelector } from './ModelSelector.js';
+import type { ProviderManager } from './ProviderManager.js';
 
 const logger = createModuleLogger('ArbitrageEngineAdapter');
 
@@ -111,78 +111,57 @@ export class ArbitrageEngineAdapter implements Llm {
       'Executing request via Arbitrage Engine.'
     );
 
-    // 1. (Removed unused availableModels variable)
-
-    // 2. Use our "brain" (ModelSelector) to select the best model for the given prompt.
+    // Get all available models, shuffled randomly. This aligns with the main router's philosophy.
     const enabledProviders = this.providerManager.getEnabledProviderIds();
-    const bestModel = await this.modelSelector.selectModel(
+    const candidates = await this.modelSelector.selectModel(
       {
-        isFree: true,
-        // We could add more sophisticated criteria here based on the prompt
+        isFree: true, // Default to free models for Volcano tasks
       },
       {
         allowedProviders: enabledProviders,
-        preferredProviderOrder: enabledProviders,
       }
     );
 
-    if (!bestModel) {
-      logger.error(
-        { method: 'gen', prompt: prompt },
-        'No suitable model found by the Arbitrage Engine.' as string
-      );
-      throw new Error('No suitable model available to handle the request.');
+    if (!candidates || candidates.length === 0) {
+      throw new Error('No candidate models available to handle the request.');
     }
 
-    // 3. Find the correct provider adapter (e.g., OpenRouterAdapter) to use for the selected model.
-    const adapterToUse = this.providerManager.getAdapter(bestModel.apiProvider);
-    if (!adapterToUse) {
-      logger.error(
-        {
-          method: 'gen',
-          modelId: bestModel.id,
-          apiProvider: bestModel.apiProvider,
-        },
-        'Could not find a configured adapter for the selected model.' as string
-      );
-      throw new Error(
-        `Adapter not found for provider: ${bestModel.apiProvider}`
-      );
+    // --- Resilient Generation Loop ---
+    // This is the same "try-every-missile" loop from router.ts
+    for (const model of candidates) {
+      try {
+        const adapter = this.providerManager.getAdapter(model.apiProvider);
+        if (!adapter) {
+          logger.warn(`No adapter for provider: ${model.apiProvider}`);
+          continue;
+        }
+
+        const response = await adapter.executeChatCompletion({
+          model: model.id,
+          messages: [{ role: 'user', content: prompt }],
+        });
+
+        const llmOutput = response.choices[0]?.message.content || '';
+        if (llmOutput) {
+          logger.info(
+            { method: 'gen', modelUsed: model.id },
+            'Arbitrage Engine execution complete.'
+          );
+          return llmOutput;
+        }
+        // If we got an empty response, log it and try the next model.
+        logger.warn(`Empty response from model ${model.id}. Trying next...`);
+      } catch (error) {
+        logger.warn(
+          `Model ${model.id} failed. Trying next...`,
+          (error as Error).message
+        );
+        this.providerManager.markProviderCooldown(model.apiProvider, 60000);
+      }
     }
 
-    // 4. Execute the call using the chosen adapter.
-    try {
-      const response = await adapterToUse.executeChatCompletion({
-        model: bestModel.id,
-        messages: [{ role: 'user', content: prompt }],
-      });
-
-      // 5. Transform our internal ChatCompletionResponse into the LlmExecuteResult format that Volcano expects.
-      const result: LlmResult = {
-        llmOutput: response.choices[0]?.message.content || '',
-        usage: {
-          promptTokens: response.usage.promptTokens,
-          completionTokens: response.usage.completionTokens,
-          totalTokens: response.usage.totalTokens,
-        },
-        model: bestModel.id,
-        // Add the missing property that Volcano expects.
-        toolCalls: [],
-      };
-
-      logger.info(
-        { method: 'gen', modelUsed: bestModel.id },
-        'Arbitrage Engine execution complete.'
-      );
-      return result.llmOutput;
-    } catch (error) {
-      logger.error(
-        { method: 'gen', modelId: bestModel.id, error },
-        'Error during chat completion execution.' as string
-      );
-      // Re-throw the error so it can be handled by the tRPC layer.
-      throw error;
-    }
+    // If the loop finishes without success, throw an error.
+    throw new Error('Execution failed after trying all available models.');
   }
 
   public async genWithTools(options: LlmOptions | string): Promise<LlmResult> {

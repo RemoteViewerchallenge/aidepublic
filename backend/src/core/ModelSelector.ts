@@ -1,5 +1,5 @@
 import pool from '../../../db/index.js';
-import type { Model, ProviderId } from '../types/provider';
+import type { Model, ProviderId } from '../types/provider.js';
 
 interface ModelCriteria {
   minContext?: number;
@@ -15,295 +15,82 @@ interface SelectModelOptions {
   allowedProviders?: ProviderId[];
   preferredProviderOrder?: ProviderId[];
   excludedModelIds?: string[];
+  candidatesPerProvider?: number;
 }
 
 export class ModelSelector {
   async selectModel(
     criteria: ModelCriteria,
     options: SelectModelOptions = {}
-  ): Promise<Model | null> {
+  ): Promise<Model[] | null> {
     let client;
-
     try {
       client = await pool.connect();
 
-      let rows: any[];
-      try {
-        const result = await client.query('SELECT * FROM models');
-        rows = Array.isArray(result.rows) ? result.rows : [];
-      } catch (dbError) {
-        console.error(
-          '❌ ModelSelector: Error querying the "models" table. Does it exist?',
-          dbError
-        );
-        // If the table doesn't exist or there's a query error, return null.
-        rows = [];
+      const queryParams: any[] = [];
+
+      // --- Build Query based on Criteria ---
+      const whereClauses: string[] = ['blacklisted = false'];
+
+      if (criteria.minContext !== undefined) {
+        queryParams.push(criteria.minContext);
+        whereClauses.push(`context_length >= $${queryParams.length}`);
+      }
+      if (criteria.maxContext !== undefined) {
+        queryParams.push(criteria.maxContext);
+        whereClauses.push(`context_length <= $${queryParams.length}`);
+      }
+      if (criteria.toolCalling !== undefined) {
+        queryParams.push(criteria.toolCalling);
+        whereClauses.push(`tool_calling = $${queryParams.length}`);
+      }
+      if (criteria.vision !== undefined) {
+        queryParams.push(criteria.vision);
+        whereClauses.push(`vision = $${queryParams.length}`);
+      }
+      if (criteria.reasoning !== undefined) {
+        queryParams.push(criteria.reasoning);
+        whereClauses.push(`reasoning = $${queryParams.length}`);
+      }
+      if (criteria.embedding !== undefined) {
+        queryParams.push(criteria.embedding);
+        whereClauses.push(`embedding = $${queryParams.length}`);
+      }
+
+      // --- Provider Filtering ---
+      if (options.allowedProviders && options.allowedProviders.length > 0) {
+        queryParams.push(options.allowedProviders);
+        whereClauses.push(`provider = ANY($${queryParams.length}::text[])`);
+      }
+      if (options.excludedModelIds && options.excludedModelIds.length > 0) {
+        queryParams.push(options.excludedModelIds);
+        whereClauses.push(`id != ANY($${queryParams.length}::text[])`);
+      }
+
+      const finalQuery = `SELECT * FROM models WHERE ${whereClauses.join(
+        ' AND '
+      )} ORDER BY RANDOM()`;
+
+      console.log('ModelSelector Query:', finalQuery, queryParams);
+
+      const result = await client.query(finalQuery, queryParams);
+      const candidates = result.rows;
+
+      if (candidates.length === 0) {
+        console.log('❌ ModelSelector: No models matched the criteria.');
         return null;
       }
 
-      const normalizeProvider = (value: unknown): string =>
-        String(value || '').toLowerCase();
-
-      const allowedProviders = (options.allowedProviders || [])
-        .map(provider => normalizeProvider(provider))
-        .filter(Boolean);
-      const allowedProviderSet =
-        allowedProviders.length > 0 ? new Set(allowedProviders) : null;
-
-      const preferredOrder = (
-        options.preferredProviderOrder ||
-        options.allowedProviders ||
-        []
-      )
-        .map(provider => normalizeProvider(provider))
-        .filter(Boolean);
-      const excludedModelIds = new Set(
-        (options.excludedModelIds || []).map(id =>
-          String(id || '').toLowerCase()
-        )
-      );
-
-      const providerPriority = new Map<string, number>();
-      preferredOrder.forEach((provider, index) => {
-        if (!providerPriority.has(provider)) {
-          providerPriority.set(provider, index);
-        }
-      });
-
-      if (allowedProviderSet) {
-        rows = rows.filter(row =>
-          allowedProviderSet.has(
-            normalizeProvider(row.provider ?? row.api_provider)
-          )
-        );
-
-        if (rows.length === 0) {
-          console.warn(
-            '⚠️ ModelSelector: no models available for allowed providers.',
-            { allowedProviders }
-          );
-          return null;
-        }
-      }
-
-      if (rows.length === 0) {
-        console.log('❌ ModelSelector: models table is empty.');
-        return null;
-      }
-
-      // Apply excluded model ids filter (session blacklists, etc.)
-      if (excludedModelIds.size > 0) {
-        rows = rows.filter(
-          row => !excludedModelIds.has(String(row.id || '').toLowerCase())
-        );
-        if (rows.length === 0) {
-          console.warn(
-            '⚠️ ModelSelector: all models excluded by excludedModelIds'
-          );
-          return null;
-        }
-      }
-
-      const normalizeRawData = (raw: any): Record<string, any> => {
-        if (!raw) {
-          return {};
-        }
-
-        if (typeof raw === 'string') {
-          try {
-            return JSON.parse(raw);
-          } catch (error) {
-            console.warn(
-              '⚠️ ModelSelector: failed to parse raw_data string.',
-              error
-            );
-            return {};
-          }
-        }
-
-        return raw;
-      };
-
-      const determineIsFree = (row: any): boolean => {
-        const provider = normalizeProvider(row.provider);
-
-        if (provider === 'aistudio') {
-          return true;
-        }
-
-        if (provider === 'openrouter') {
-          const raw = normalizeRawData(row.raw_data);
-          const pricing = raw.pricing || {};
-
-          const allPricesZero = Object.values(pricing).every(value => {
-            if (typeof value === 'string') {
-              const parsed = parseFloat(value);
-              return Number.isFinite(parsed) && parsed === 0;
-            }
-
-            if (typeof value === 'number') {
-              return value === 0;
-            }
-
-            return false;
-          });
-
-          return (
-            allPricesZero ||
-            (typeof row.id === 'string' &&
-              row.id.toLowerCase().includes(':free'))
-          );
-        }
-
-        return false;
-      };
-
-      const matchesCriteria = (row: any, requireFree: boolean): boolean => {
-        if (
-          criteria.minContext !== undefined &&
-          (row.context_length || 0) < criteria.minContext
-        ) {
-          return false;
-        }
-
-        if (
-          criteria.maxContext !== undefined &&
-          (row.context_length || 0) > criteria.maxContext
-        ) {
-          return false;
-        }
-
-        if (
-          criteria.toolCalling !== undefined &&
-          Boolean(row.tool_calling) !== Boolean(criteria.toolCalling)
-        ) {
-          return false;
-        }
-
-        if (
-          criteria.vision !== undefined &&
-          Boolean(row.vision) !== Boolean(criteria.vision)
-        ) {
-          return false;
-        }
-
-        if (
-          criteria.reasoning !== undefined &&
-          Boolean(row.reasoning) !== Boolean(criteria.reasoning)
-        ) {
-          return false;
-        }
-
-        if (
-          criteria.embedding !== undefined &&
-          Boolean(row.embedding) !== Boolean(criteria.embedding)
-        ) {
-          return false;
-        }
-
-        if (requireFree && !determineIsFree(row)) {
-          return false;
-        }
-
-        return true;
-      };
-
-      const pickDiverse = (candidates: any[]): any | null => {
-        if (candidates.length === 0) {
-          return null;
-        }
-
-        // Sort candidates by priority and context (similar to before)
-        const sorted = candidates.sort((a, b) => {
-          const getPriority = (row: any): number =>
-            providerPriority.get(
-              normalizeProvider(row.provider ?? row.api_provider)
-            ) ?? Number.MAX_SAFE_INTEGER;
-
-          const aPriority = getPriority(a);
-          const bPriority = getPriority(b);
-
-          if (aPriority !== bPriority) {
-            return aPriority - bPriority;
-          }
-
-          const aContext = Number.isFinite(a.context_length)
-            ? a.context_length
-            : Number.MAX_SAFE_INTEGER;
-          const bContext = Number.isFinite(b.context_length)
-            ? b.context_length
-            : Number.MAX_SAFE_INTEGER;
-
-          if (aContext !== bContext) {
-            return bContext - aContext; // Higher context first
-          }
-
-          const aFree = determineIsFree(a) ? 1 : 0;
-          const bFree = determineIsFree(b) ? 1 : 0;
-          if (aFree !== bFree) {
-            return bFree - aFree; // Free first
-          }
-
-          const aName = a.name || a.id || '';
-          const bName = b.name || b.id || '';
-          return aName.localeCompare(bName);
-        });
-
-        // Select randomly from the top 3 candidates for diversity
-        const topCandidates = sorted.slice(0, Math.min(3, sorted.length));
-        const randomIndex = Math.floor(Math.random() * topCandidates.length);
-        return topCandidates[randomIndex];
-      };
-
-      const preferFree = criteria.isFree !== false;
-
-      let candidates = rows.filter(row => matchesCriteria(row, preferFree));
-
-      if (candidates.length === 0 && preferFree) {
-        console.log(
-          '⚠️ ModelSelector: no free models matched criteria, retrying without free filter.'
-        );
-        candidates = rows.filter(row => matchesCriteria(row, false));
-      }
-
-      let selectedRow = pickDiverse(candidates);
-
-      if (!selectedRow) {
-        console.log(
-          '⚠️ ModelSelector: no models matched criteria, falling back to overall best.'
-        );
-        selectedRow = pickDiverse(rows);
-      }
-
-      if (!selectedRow) {
-        console.log(
-          '❌ ModelSelector: failed to select a model after fallback.'
-        );
-        return null;
-      }
-
-      const isFree = determineIsFree(selectedRow);
-      const normalizedProvider = normalizeProvider(
-        selectedRow.provider ?? selectedRow.api_provider
-      );
-
-      console.log('✅ ModelSelector selected model:', {
-        id: selectedRow.id,
-        name: selectedRow.name,
-        provider: normalizedProvider,
-        context: selectedRow.context_length,
-        free: isFree,
-      });
-
-      return {
-        id: selectedRow.id,
-        name: selectedRow.name,
-        apiProvider: normalizedProvider,
-        sourceProvider: normalizedProvider,
-        contextWindow: selectedRow.context_length,
-        supportsToolUse: Boolean(selectedRow.tool_calling),
-        isFree,
-      };
+      // Return the list of candidates
+      return candidates.map(row => ({
+        id: row.id,
+        name: row.name,
+        apiProvider: String(row.provider || '').toLowerCase() as ProviderId,
+        sourceProvider: String(row.provider || '').toLowerCase() as ProviderId,
+        contextWindow: row.context_length,
+        supportsToolUse: Boolean(row.tool_calling),
+        isFree: row.is_free, // Use the actual value from the database
+      }));
     } catch (error) {
       console.error('Failed to select model:', error);
       return null;
@@ -314,65 +101,13 @@ export class ModelSelector {
     }
   }
 
-  // Backwards compatibility: support legacy selectBestModel(models, task) and new selectBestModel(criteria, options)
-  async selectBestModel(first: any, second?: any): Promise<Model | null> {
-    // Old signature: selectBestModel(models: any[], task: string)
-    if (Array.isArray(first)) {
-      const models = first as any[];
-      // Normalize and choose the best free model with the largest context window
-      const normalizeProvider = (value: unknown): string =>
-        String(value || '').toLowerCase();
-
-      const determineIsFree = (row: any): boolean => {
-        const provider = normalizeProvider(row.provider ?? row.api_provider);
-        if (provider === 'aistudio') return true;
-        if (provider === 'openrouter') {
-          const pricing = (row.raw_data && row.raw_data.pricing) || {};
-          const allPricesZero = Object.values(pricing).every((v: any) => {
-            if (typeof v === 'string') return Number.parseFloat(v) === 0;
-            if (typeof v === 'number') return v === 0;
-            return false;
-          });
-          return (
-            allPricesZero ||
-            (typeof row.id === 'string' &&
-              row.id.toLowerCase().includes(':free'))
-          );
-        }
-        return false;
-      };
-
-      let candidates = models.slice();
-      if (candidates.length === 0) return null;
-      // Prefer free models, then larger context, then name
-      candidates.sort((a, b) => {
-        const aFree = determineIsFree(a) ? 1 : 0;
-        const bFree = determineIsFree(b) ? 1 : 0;
-        if (aFree !== bFree) return bFree - aFree;
-        const aCtx = Number.isFinite(a.context_length) ? a.context_length : 0;
-        const bCtx = Number.isFinite(b.context_length) ? b.context_length : 0;
-        if (aCtx !== bCtx) return bCtx - aCtx;
-        const aName = (a.name || a.id || '').toString();
-        const bName = (b.name || b.id || '').toString();
-        return aName.localeCompare(bName);
-      });
-
-      const pick = candidates[0];
-      return {
-        id: pick.id,
-        name: pick.name,
-        apiProvider: normalizeProvider(pick.provider ?? pick.api_provider),
-        sourceProvider: normalizeProvider(pick.provider ?? pick.api_provider),
-        contextWindow: pick.context_length,
-        supportsToolUse: Boolean(pick.tool_calling),
-        isFree: determineIsFree(pick),
-      };
-    }
-
-    // New signature: delegate to selectModel(criteria, options)
-    return this.selectModel(
-      first as ModelCriteria,
-      (second as SelectModelOptions) || {}
-    );
+  // Backwards compatibility for tests.
+  // Note: This now returns the first model from the list for simplicity.
+  async selectBestModel(
+    criteria: ModelCriteria,
+    options: SelectModelOptions = {}
+  ): Promise<Model | null> {
+    const models = await this.selectModel(criteria, options);
+    return models && models.length > 0 ? models[0] : null;
   }
 }

@@ -1,6 +1,6 @@
 import pg from 'pg';
 
-import { getEnv } from '../backend/src/utils/env';
+import { getEnv } from '../backend/src/utils/env.js';
 
 const { Pool } = pg;
 

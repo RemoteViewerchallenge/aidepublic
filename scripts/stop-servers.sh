@@ -32,6 +32,16 @@ sleep 2
 pkill -9 -f "tsx watch" 2>/dev/null
 pkill -9 -f "next dev" 2>/dev/null
 
+echo "🛑 Stopping MCP Proxy container..."
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+PROXY_COMPOSE_FILE="$REPO_ROOT/mcp/mcp-proxy-master/docker-compose.yaml"
+if [ -f "$PROXY_COMPOSE_FILE" ]; then
+    (cd "$(dirname "$PROXY_COMPOSE_FILE")" && docker compose down -v --remove-orphans)
+else
+    echo "⚠️ Proxy docker-compose file not found, could not stop container."
+fi
+
+
 echo "✅ All servers stopped!"
 
 # Show remaining processes (if any)

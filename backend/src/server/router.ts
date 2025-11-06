@@ -12,20 +12,21 @@
  */
 
 import { initTRPC, TRPCError } from '@trpc/server';
-import { z } from 'zod';
+import { boolean, number, z } from 'zod';
 
 // import { agent } from 'volcano-sdk';
-import { createComplexOrchestration } from '../../volcano-sdk/src/orchestration-creator';
-import { agent } from '../../volcano-sdk/src/volcano-sdk';
-import { AIStudioAdapter } from '../adapters/AIStudioAdapter';
-import { GeminiAdapter } from '../adapters/GeminiAdapter';
-import { OpenRouterAdapter } from '../adapters/OpenRouterAdapter';
-import { ArbitrageEngineAdapter } from '../core/ArbitrageEngineAdapter';
-import { CodeModeManager } from '../core/CodeModeManager';
-import { ModelSelector } from '../core/ModelSelector';
-import { ProviderManager } from '../core/ProviderManager';
-import { StateRepository } from '../state/StateRepository';
-import { getEnv } from '../utils/env';
+import { createComplexOrchestration } from '../../volcano-sdk/src/orchestration-creator.js';
+import { agent } from '../../volcano-sdk/src/volcano-sdk.js';
+import { AIStudioAdapter } from '../adapters/AIStudioAdapter.js';
+import { GeminiAdapter } from '../adapters/GeminiAdapter.js';
+import { OpenRouterAdapter } from '../adapters/OpenRouterAdapter.js';
+import { bareBonesRouter } from '../components/bareBones.js';
+import { ArbitrageEngineAdapter } from '../core/ArbitrageEngineAdapter.js';
+import { ModelSelector } from '../core/ModelSelector.js';
+import { ProviderManager } from '../core/ProviderManager.js';
+import { StateRepository } from '../state/StateRepository.js';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { getEnv } from '../utils/env.js';
 
 // --- Application Composition Root ---
 // This is where we instantiate and wire together all the core components of our application.
@@ -34,20 +35,19 @@ const geminiAdapter = new GeminiAdapter(); // Will be disabled if no key
 const openRouterAdapter = new OpenRouterAdapter(); // Will be enabled if key exists
 const aiStudioAdapter = new AIStudioAdapter(); // Enabled only when configured
 
-const providerManager = new ProviderManager(
+export const providerManager = new ProviderManager(
   [geminiAdapter, openRouterAdapter, aiStudioAdapter],
   stateRepository
 );
 const modelSelector = new ModelSelector();
 const arbitrageEngineAdapter = new ArbitrageEngineAdapter(
   providerManager,
-  modelSelector
+  modelSelector as any
 );
 const codeModeManager = new CodeModeManager();
 
 // Initialize the ProviderManager to start health checks and load state.
-// DISABLED: We use database-based model management instead of real-time API calls
-// providerManager.initialize();
+// This is now handled in server.ts to ensure it runs before model sync.
 // --- End Composition Root ---
 
 const t = initTRPC.create();
@@ -81,7 +81,7 @@ export const appRouter = t.router({
       // 1. Get free models directly from database instead of ProviderManager
       const { default: pool } = await import('../../../db/index.js');
       const result = await pool.query(`
-        SELECT * FROM models 
+        SELECT * FROM models
         WHERE provider = 'openrouter'
           AND raw_data->'pricing'->>'image' = '0'
           AND raw_data->'pricing'->>'prompt' = '0'
@@ -92,7 +92,9 @@ export const appRouter = t.router({
         ORDER BY context_length DESC
       `);
 
-      if (result.rows.length === 0) {
+      const dbModels: any[] = result.rows;
+
+      if (dbModels.length === 0) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'No free models available. Please sync the database.',
@@ -101,19 +103,10 @@ export const appRouter = t.router({
 
       // 2. Use the "brain" to select the best model for the task.
       const enabledProviders = providerManager.getEnabledProviderIds();
-      const chosenModel = await modelSelector.selectModel(
-        {
-          minContext: input.criteria?.minContext,
-          maxContext: input.criteria?.maxContext,
-          toolCalling: input.criteria?.toolCalling,
-          vision: input.criteria?.vision,
-          reasoning: input.criteria?.reasoning,
-          embedding: input.criteria?.embedding,
-        },
-        {
-          allowedProviders: enabledProviders,
-          preferredProviderOrder: enabledProviders,
-        }
+      // Filter DB models by enabled providers before passing to selector
+      const chosenModel = await modelSelector.selectBestModel(
+        { isFree: true },
+        { allowedProviders: enabledProviders }
       );
 
       if (!chosenModel) {
@@ -124,10 +117,12 @@ export const appRouter = t.router({
         });
       }
 
+      const bestModel: any = chosenModel;
+
       return {
-        modelId: chosenModel.id,
-        apiProvider: chosenModel.apiProvider,
-        sourceProvider: chosenModel.sourceProvider,
+        modelId: bestModel.id,
+        apiProvider: bestModel.apiProvider,
+        sourceProvider: bestModel.sourceProvider,
         reason:
           'Selected as the best available FREE model based on task requirements.',
       };
@@ -160,30 +155,18 @@ export const appRouter = t.router({
           .optional(),
       })
     )
-    .mutation(async ({ input }) => {
-      // 1. Select best model for this task based on criteria
-      // Always prefer free models by default
+    .mutation(async ({ input }: { input: any }) => {
+      // 1. Select the best model from the database using our selector
       const enabledProviders = providerManager.getEnabledProviderIds();
-      const chosenModel = await modelSelector.selectModel(
-        {
-          minContext: input.modelCriteria?.minContext,
-          maxContext: input.modelCriteria?.maxContext,
-          toolCalling: input.modelCriteria?.toolCalling,
-          vision: input.modelCriteria?.vision,
-          reasoning: input.modelCriteria?.reasoning,
-          embedding: input.modelCriteria?.embedding,
-          isFree: true, // Always prioritize free models
-        },
-        {
-          allowedProviders: enabledProviders,
-          preferredProviderOrder: enabledProviders,
-        }
+      const chosenModel = await modelSelector.selectBestModel(
+        { isFree: true, ...input.modelCriteria },
+        { allowedProviders: enabledProviders }
       );
 
       if (!chosenModel) {
         throw new TRPCError({
           code: 'NOT_FOUND',
-          message: 'No suitable model available for generation.',
+          message: 'No suitable model found in the database for generation.',
         });
       }
 
@@ -192,7 +175,7 @@ export const appRouter = t.router({
       if (!adapter) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: `No adapter found for provider: ${chosenModel.apiProvider}`,
+          message: `No adapter found for provider: ${chosenModel.provider}`,
         });
       }
 
@@ -262,7 +245,7 @@ export const appRouter = t.router({
           content: response.choices[0]?.message?.content || '',
           model: response.model,
           usage: response.usage,
-          providerId: chosenModel.apiProvider,
+          providerId: chosenModel.provider,
           modelId: chosenModel.id,
         };
       } catch (_error: any) {
@@ -291,55 +274,50 @@ export const appRouter = t.router({
           try {
             const enabled = providerManager
               .getEnabledProviderIds()
-              .filter(id => id !== chosenModel.apiProvider);
+              .filter((id: string) => id !== chosenModel.provider);
+
             if (enabled.length > 0) {
-              const altModel = await modelSelector.selectModel(
-                {
-                  minContext: input.modelCriteria?.minContext,
-                  maxContext: input.modelCriteria?.maxContext,
-                  toolCalling: input.modelCriteria?.toolCalling,
-                  vision: input.modelCriteria?.vision,
-                  reasoning: input.modelCriteria?.reasoning,
-                  embedding: input.modelCriteria?.embedding,
-                  isFree: true,
-                },
+              const altModel = await modelSelector.selectBestModel(
+                { isFree: true, ...input.modelCriteria },
                 {
                   allowedProviders: enabled,
-                  preferredProviderOrder: enabled,
+                  excludedModelIds: [chosenModel.id],
                 }
               );
 
               if (altModel) {
-                const altAdapter = providerManager.getAdapter(
-                  altModel.apiProvider
-                );
-                if (altAdapter) {
-                  try {
-                    const altResp = await attemptGeneration(
-                      altAdapter,
-                      altModel.id
-                    );
-                    // Increment use_point for the successfully used alternative model
-                    const { default: pool } = await import(
-                      '../../../db/index.js'
-                    );
-                    await pool.query(
-                      'UPDATE models SET use_point = use_point + 1 WHERE id = $1',
-                      [altModel.id]
-                    );
-                    return {
-                      content: altResp.choices[0]?.message?.content || '',
-                      model: altResp.model,
-                      usage: altResp.usage,
-                      providerId: altModel.apiProvider,
-                      modelId: altModel.id,
-                    };
-                  } catch (altErr) {
-                    console.warn(
-                      '⚠️ Alternative provider attempt failed:',
-                      String(altErr)
-                    );
-                    // fallthrough to next fallback
+                if (altModel) {
+                  const altAdapter = providerManager.getAdapter(
+                    altModel.apiProvider
+                  );
+                  if (altAdapter) {
+                    try {
+                      const altResp = await attemptGeneration(
+                        altAdapter,
+                        altModel.id
+                      );
+                      // Increment use_point for the successfully used alternative model
+                      const { default: pool } = await import(
+                        '../../../db/index.js'
+                      );
+                      await pool.query(
+                        'UPDATE models SET use_point = use_point + 1 WHERE id = $1',
+                        [altModel.id]
+                      );
+                      return {
+                        content: altResp.choices[0]?.message?.content || '',
+                        model: altResp.model, // altResp.model is a string, not an object.
+                        usage: altResp.usage,
+                        providerId: altModel.apiProvider,
+                        modelId: altModel.id,
+                      };
+                    } catch (altErr) {
+                      console.warn(
+                        '⚠️ Alternative provider attempt failed:',
+                        String(altErr)
+                      );
+                      // fallthrough to next fallback
+                    }
                   }
                 }
               }
@@ -373,8 +351,8 @@ export const appRouter = t.router({
           try {
             const allModels = await providerManager.getAvailableModels(true);
             const candidates = allModels.filter(
-              m =>
-                m.apiProvider === chosenModel.apiProvider &&
+              (m: any) =>
+                m.apiProvider === chosenModel.provider &&
                 m.id !== chosenModel.id
             );
             for (const candidate of candidates) {
@@ -427,72 +405,6 @@ export const appRouter = t.router({
       }
     }),
 
-  /**
-   * Get all available models with their current health status.
-   */
-  getAvailableModels: t.procedure.query(async () => {
-    const models = await providerManager.getAvailableModels();
-    return models.map(model => ({
-      id: model.id,
-      name: model.name || model.id,
-      provider: model.apiProvider,
-      contextLength: model.contextLength,
-      capabilities: {
-        toolCalling: model.id.includes('tool') || model.id.includes('function'),
-        vision: model.id.includes('vision') || model.id.includes('gpt-4'),
-        reasoning: model.id.includes('o1') || model.id.includes('reasoning'),
-      },
-    }));
-  }),
-
-  /**
-   * Get all models from the unified models database table.
-   * This is the new preferred method for getting model data.
-   * Returns ALL AI Studio models + FREE OpenRouter models.
-   */
-  getModelsFromDatabase: t.procedure.query(async () => {
-    try {
-      // Import the pool here to avoid circular dependencies
-      const { default: pool } = await import('../../../db/index.js');
-
-      const result = await pool.query(`
-        SELECT * FROM models
-        ORDER BY provider, context_length DESC
-      `);
-
-      const models = result.rows.map(model => ({
-        id: model.id,
-        name: model.name,
-        provider: model.provider,
-        contextLength: model.context_length,
-        capabilities: {
-          toolCalling: model.tool_calling,
-          vision: model.vision,
-          reasoning: model.reasoning,
-          embedding: model.embedding,
-          uncensored: (model.name || '').toLowerCase().includes('uncensored'),
-          experimental: (model.name || '').toLowerCase().includes('experiment'),
-        },
-        description: model.description || '',
-        parameters: null,
-        rawData: model.raw_data,
-        isFree: true, // Assuming all models in the unified table are free for now
-        source: model.provider,
-      }));
-
-      console.log(
-        `📊 Found ${models.length} total models from the unified table`
-      );
-
-      return models;
-    } catch (_error: any) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: `Failed to fetch models from database: ${_error?.message}`,
-      });
-    }
-  }),
-
   /**_
    * Runs a simple, single-step agent workflow to verify end-to-end integration.
    */
@@ -514,26 +426,6 @@ export const appRouter = t.router({
   //     return { output: result };
   //   }),
 
-  runTool: t.procedure
-    .input(
-      z.object({
-        toolName: z.string(),
-        args: z.record(z.any()).optional(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      try {
-        const tool = await codeModeManager.getTool(input.toolName);
-        const result = await tool.execute(input.args);
-        return { success: true, result };
-      } catch (error: any) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: `Tool execution failed: ${error.message}`,
-          cause: error,
-        });
-      }
-    }),
   runOrchestration: t.procedure
     .input(
       z.object({
@@ -565,20 +457,22 @@ export const appRouter = t.router({
         ),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input }: { input: any }) => {
       try {
         // Use our existing ArbitrageEngineAdapter as the LLM for volcano orchestration
         const llm = arbitrageEngineAdapter;
 
         // Ensure steps are of type ComplexStep[]
-        const complexSteps = input.steps.map(step => ({
-          prompt: step.prompt,
-          pattern: step.pattern,
-          patternConfig: step.patternConfig,
-        }));
+        const complexSteps = input.steps.map(
+          (step: { prompt: any; pattern: any; patternConfig: any }) => ({
+            prompt: step.prompt,
+            pattern: step.pattern,
+            patternConfig: step.patternConfig,
+          })
+        );
 
         const config = {
-          roles: input.roles?.map(role => ({
+          roles: input.roles?.map((role: { name: any; description: any }) => ({
             // ensure we only supply the fields expected by Volcano's Role type
             name: role.name,
             description: role.description,
@@ -600,7 +494,9 @@ export const appRouter = t.router({
           results,
           timestamp: new Date().toISOString(),
           stepCount: input.steps.length,
-          patterns: input.steps.map(s => s.pattern || 'sequential'),
+          patterns: input.steps.map(
+            (s: { pattern: any }) => s.pattern || 'sequential'
+          ),
         };
       } catch (_error: any) {
         console.error('Orchestration failed:', _error);
@@ -612,13 +508,14 @@ export const appRouter = t.router({
       }
     }),
 
-  getProviderStatus: t.procedure.query(() => {
+  getProviderStatuses: t.procedure.query(async () => {
     return {
-      gemini: new GeminiAdapter().isEnabled,
-      openrouter: new OpenRouterAdapter().isEnabled,
-      aistudio: new AIStudioAdapter().isEnabled,
+      gemini: geminiAdapter.isEnabled,
+      openrouter: openRouterAdapter.isEnabled,
+      aistudio: aiStudioAdapter.isEnabled,
     };
   }),
+  bareBones: bareBonesRouter, // Add the bareBones router here
 });
 
 // Export the type of the router for the client to use. This is key for end-to-end type safety.

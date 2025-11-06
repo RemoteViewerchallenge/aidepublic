@@ -1,0 +1,95 @@
+{
+  "name": "lootbox",
+  "description": "Core tools for filesystem, key-value store, and memory.",
+  "tools": [
+    {
+      "name": "fs_readFile",
+      "description": "Read file contents",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "path": { "type": "string" } },
+        "required": ["path"]
+      },
+      "invoke": {
+        "type": "http-post",
+        "url": "http://host.docker.internal:3005/rpc/fs/readFile"
+      }
+    },
+    {
+      "name": "fs_writeFile",
+      "description": "Write content to a file",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string" },
+          "content": { "type": "string" }
+        },
+        "required": ["path", "content"]
+      },
+      "invoke": {
+        "type": "http-post",
+        "url": "http://host.docker.internal:3005/rpc/fs/writeFile"
+      }
+    },
+    {
+      "name": "fs_listDirectory",
+      "description": "List contents of a directory",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "path": { "type": "string" } },
+        "required": ["path"]
+      },
+      "invoke": {
+        "type": "http-post",
+        "url": "http://host.docker.internal:3005/rpc/fs/listDirectory"
+      }
+    },
+    {
+      "name": "kv_get",
+      "description": "Get a value from the key-value store",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "key": { "type": "string" } },
+        "required": ["key"]
+      },
+      "invoke": {
+        "type": "http-post",
+        "url": "http://host.docker.internal:3005/rpc/kv/get"
+      }
+    },
+    {
+      "name": "kv_set",
+      "description": "Set a value in the key-value store",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "value": { "type": "any" }
+        },
+        "required": ["key", "value"]
+      },
+      "invoke": {
+        "type": "http-post",
+        "url": "http://host.docker.internal:3005/rpc/kv/set"
+      }
+    },
+    {
+      "name": "code_generate",
+      "description": "Generates code based on a prompt. Use this for all code generation tasks.",
+      "roles": ["developer"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": { "type": "string" },
+          "systemPrompt": { "type": "string" },
+          "modelCriteria": { "type": "object" }
+        },
+        "required": ["prompt"]
+      },
+      "invoke": {
+        "type": "http-post",
+        "url": "http://host.docker.internal:3000/api/trpc/generateContent"
+      }
+    }
+  ]
+}

@@ -28,6 +28,7 @@ echo "Starting proxy container (idempotent)..."
 docker rm -f mcp-proxy-master || true
 docker run -d --name mcp-proxy-master -p 9090:9090 \
   -v "$PROXY_CONFIG":/config/config.json:ro,z \
+  -e "MCP_ADAPTER_NAME=${NAME}" \
   -v "$JUNGLE_DIR":/host:ro,z \
   ghcr.io/tbxark/mcp-proxy:latest --config /config/config.json
 
