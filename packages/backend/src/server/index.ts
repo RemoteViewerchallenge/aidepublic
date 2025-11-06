@@ -16,9 +16,9 @@ import 'dotenv/config';
 // eslint-disable-next-line import/order
 import type { Server } from 'http';
 
-import logger from '../utils/logger.js';
+import logger from '@/utils/logger.js';
 
-import { createServer } from './server.js';
+import { createServer } from '@/server/server.js';
 
 const app = createServer();
 const PORT = process.env.PORT || 3000;

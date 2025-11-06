@@ -1,6 +1,6 @@
 // my-app/app/layout.tsx
-import Provider from './_trpc/Provider';
-import './styles.css';
+import Provider from '@/_trpc/Provider';
+import '@/styles.css';
 
 export default function RootLayout({
   children,

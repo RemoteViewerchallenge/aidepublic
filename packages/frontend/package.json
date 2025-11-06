@@ -1,5 +1,5 @@
 {
-  "name": "my-app",
+  "name": "frontend",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -24,12 +24,5 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "xterm": "^5.3.0"
-  },
-  "devDependencies": {
-    "@types/node": "^17.0.12",
-    "@types/react": "^19.0.1",
-    "@types/react-dom": "^19.0.2",
-    "eslint-config-custom": "*",
-    "typescript": "^5.5.4"
   }
 }

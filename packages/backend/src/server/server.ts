@@ -9,8 +9,8 @@ import * as trpcExpress from '@trpc/server/adapters/express';
 import cors from 'cors';
 import express from 'express';
 
-import { appRouter, providerManager } from './router.js';
-import { syncAndUnifyModels } from '../utils/modelSync.js';
+import { appRouter, providerManager } from '@/server/router.js';
+import { syncAndUnifyModels } from '@/utils/modelSync.js';
 
 export function createServer() {
   // --- Initialize Providers and Sync Models on Startup ---
